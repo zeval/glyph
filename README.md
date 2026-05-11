@@ -41,6 +41,7 @@ Host app:
 make sample-book
 make host
 make run-host
+./build/host/glyph books/glyph-sample.epub
 make test
 make check-format
 ```

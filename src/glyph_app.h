@@ -20,6 +20,7 @@ enum class Screen {
 struct AppConfig {
   int width = 480;
   int height = 272;
+  std::string initial_book_path;
 };
 
 class App {
@@ -66,6 +67,7 @@ private:
   void updateShoulderHold(bool left_down, bool right_down, uint32_t now_ms);
   void refreshLibrary();
   void openSelectedBook();
+  void openBookPath(const std::string& path);
   void setReaderText(const std::string& title, const std::string& status, const std::string& text);
   std::vector<std::string> wrapReaderText(const std::string& text) const;
   int linesPerPage() const;

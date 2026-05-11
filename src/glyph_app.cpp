@@ -105,6 +105,9 @@ App::App(AppConfig config) : config_(config) {
   setReaderText("No book open", "Open an EPUB from the library.",
                 "Drop DRM-free EPUB files in " + defaultBooksPath() +
                     " and open one from the library. The PoC supports simple text EPUBs.");
+  if (!config_.initial_book_path.empty()) {
+    openBookPath(config_.initial_book_path);
+  }
 }
 
 App::~App() {
@@ -423,9 +426,13 @@ void App::openSelectedBook() {
     return;
   }
 
+  openBookPath(entry.path);
+}
+
+void App::openBookPath(const std::string& path) {
   EpubDocument document;
-  if (!document.open(entry.path)) {
-    setReaderText(filenameFromPath(entry.path), "Could not open EPUB", document.error());
+  if (!document.open(path)) {
+    setReaderText(filenameFromPath(path), "Could not open EPUB", document.error());
     screen_ = Screen::Reader;
     return;
   }
