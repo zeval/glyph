@@ -11,6 +11,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_library(glyph_document
   src/epub.cpp
+  src/text_layout.cpp
   src/zip_archive.cpp
 )
 
@@ -142,6 +143,7 @@ if(GLYPH_BUILD_TESTS AND NOT PSP AND NOT GLYPH_BUILD_PSP)
     add_executable(glyph_tests
       tests/epub_tests.cpp
       tests/smoke_tests.cpp
+      tests/text_layout_tests.cpp
     )
     target_compile_features(glyph_tests PRIVATE cxx_std_17)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
