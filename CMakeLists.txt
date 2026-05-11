@@ -9,15 +9,31 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+add_library(glyph_document
+  src/epub.cpp
+  src/zip_archive.cpp
+)
+
 add_executable(glyph
   src/glyph_app.cpp
   src/main.cpp
 )
 
+target_include_directories(glyph_document PUBLIC src)
+target_compile_features(glyph_document PUBLIC cxx_std_17)
+
 target_include_directories(glyph PRIVATE src)
 target_compile_features(glyph PRIVATE cxx_std_17)
+target_link_libraries(glyph PRIVATE glyph_document)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+  target_compile_options(glyph_document PRIVATE
+    -Wall
+    -Wextra
+    -Werror=return-type
+    -fno-exceptions
+    -fno-rtti
+  )
   target_compile_options(glyph PRIVATE
     -Wall
     -Wextra
@@ -26,6 +42,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     -fno-rtti
   )
   if(NOT PSP AND NOT GLYPH_BUILD_PSP)
+    target_compile_options(glyph_document PRIVATE -Wpedantic)
     target_compile_options(glyph PRIVATE -Wpedantic)
   endif()
 endif()
@@ -34,6 +51,7 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(SDL2 REQUIRED sdl2)
 pkg_check_modules(SDL2_IMAGE REQUIRED SDL2_image)
 pkg_check_modules(SDL2_TTF REQUIRED SDL2_ttf)
+pkg_check_modules(ZLIB REQUIRED zlib)
 
 function(glyph_normalize_pspdev_paths out_var)
   set(normalized)
@@ -61,9 +79,17 @@ glyph_normalize_pspdev_paths(GLYPH_SDL_LIBRARY_DIRS
   SDL2_IMAGE_LIBRARY_DIRS
   SDL2_TTF_LIBRARY_DIRS
 )
+glyph_normalize_pspdev_paths(GLYPH_ZLIB_INCLUDE_DIRS
+  ZLIB_INCLUDE_DIRS
+)
+glyph_normalize_pspdev_paths(GLYPH_ZLIB_LIBRARY_DIRS
+  ZLIB_LIBRARY_DIRS
+)
 
 target_include_directories(glyph PRIVATE ${GLYPH_SDL_INCLUDE_DIRS})
 target_link_directories(glyph PRIVATE ${GLYPH_SDL_LIBRARY_DIRS})
+target_include_directories(glyph_document PRIVATE ${GLYPH_ZLIB_INCLUDE_DIRS})
+target_link_directories(glyph_document PRIVATE ${GLYPH_ZLIB_LIBRARY_DIRS})
 
 set(GLYPH_SDL_COMPILE_OPTIONS
   ${SDL2_CFLAGS_OTHER}
@@ -88,6 +114,7 @@ target_link_libraries(glyph PRIVATE
   ${SDL2_IMAGE_LIBRARIES}
   ${SDL2_TTF_LIBRARIES}
 )
+target_link_libraries(glyph_document PUBLIC ${ZLIB_LIBRARIES})
 
 target_compile_definitions(glyph PRIVATE
   GLYPH_VERSION="${PROJECT_VERSION}"
@@ -113,6 +140,7 @@ if(GLYPH_BUILD_TESTS AND NOT PSP AND NOT GLYPH_BUILD_PSP)
   find_package(Catch2 3 QUIET)
   if(Catch2_FOUND)
     add_executable(glyph_tests
+      tests/epub_tests.cpp
       tests/smoke_tests.cpp
     )
     target_compile_features(glyph_tests PRIVATE cxx_std_17)
@@ -124,7 +152,7 @@ if(GLYPH_BUILD_TESTS AND NOT PSP AND NOT GLYPH_BUILD_PSP)
         -Werror=return-type
       )
     endif()
-    target_link_libraries(glyph_tests PRIVATE Catch2::Catch2WithMain)
+    target_link_libraries(glyph_tests PRIVATE glyph_document Catch2::Catch2WithMain)
     add_test(NAME glyph.smoke COMMAND glyph_tests)
   else()
     message(STATUS "Catch2 v3 not found; host tests are skipped.")
