@@ -2,12 +2,12 @@
 
 #include "epub.h"
 #include "library.h"
+#include "text_layout.h"
 
 #include <SDL_image.h>
 
 #include <algorithm>
 #include <cstdio>
-#include <sstream>
 
 #if defined(GLYPH_PLATFORM_PSP)
 #include <pspctrl.h>
@@ -410,42 +410,30 @@ void App::setReaderText(const std::string& title, const std::string& status,
 
 std::vector<std::string> App::wrapReaderText(const std::string& text) const {
   std::vector<std::string> lines;
-  const int char_width = 7;
-  const int usable_width = std::max(40, config_.width - 36);
-  const size_t max_chars = static_cast<size_t>(std::max(12, usable_width / char_width));
 
-  std::istringstream input(text);
-  std::string paragraph;
-  while (std::getline(input, paragraph)) {
-    if (paragraph.empty()) {
-      if (!lines.empty() && !lines.back().empty()) {
+  TextLayoutConfig layout_config;
+  layout_config.viewport_width = config_.width;
+  layout_config.viewport_height = 100000;
+  layout_config.margin_left = 0;
+  layout_config.margin_top = 0;
+  layout_config.margin_right = 0;
+  layout_config.margin_bottom = 0;
+  layout_config.average_char_width = 7;
+  layout_config.line_height = font_ != nullptr ? std::max(12, TTF_FontLineSkip(font_)) : 17;
+  layout_config.paragraph_spacing = layout_config.line_height / 2;
+  layout_config.blank_line_height = layout_config.line_height;
+
+  const TextLayout layout = paginatePlainText(text, layout_config);
+  for (const TextLayoutPage& page : layout.pages) {
+    int next_y = 0;
+    for (const TextLayoutLine& line : page.lines) {
+      while (line.y - next_y >= layout_config.line_height) {
         lines.emplace_back();
+        next_y += layout_config.line_height;
       }
-      continue;
+      lines.push_back(line.text);
+      next_y = line.y + layout_config.line_height;
     }
-
-    std::istringstream words(paragraph);
-    std::string line;
-    std::string word;
-    while (words >> word) {
-      if (line.empty()) {
-        line = word;
-      } else if (line.size() + 1 + word.size() <= max_chars) {
-        line += " " + word;
-      } else {
-        lines.push_back(line);
-        line = word;
-      }
-
-      while (line.size() > max_chars) {
-        lines.push_back(line.substr(0, max_chars));
-        line.erase(0, max_chars);
-      }
-    }
-    if (!line.empty()) {
-      lines.push_back(line);
-    }
-    lines.emplace_back();
   }
 
   while (!lines.empty() && lines.back().empty()) {
