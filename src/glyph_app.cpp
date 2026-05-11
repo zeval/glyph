@@ -1,9 +1,15 @@
 #include "glyph_app.h"
 
+#include "epub.h"
+
 #include <SDL_image.h>
 
+#include <dirent.h>
+
 #include <algorithm>
+#include <cctype>
 #include <cstdio>
+#include <sstream>
 
 #if defined(GLYPH_PLATFORM_PSP)
 #include <pspctrl.h>
@@ -36,20 +42,69 @@ const char* screenName(Screen screen) {
   return "glyph";
 }
 
+std::string defaultBooksPath() {
+#if defined(GLYPH_PLATFORM_PSP)
+  return "ef0:/PSP/GAME/glyph/books/";
+#else
+  return "books/";
+#endif
+}
+
+std::string joinPath(const std::string& dir, const std::string& name) {
+  if (dir.empty() || dir.back() == '/') {
+    return dir + name;
+  }
+  return dir + "/" + name;
+}
+
+std::string filenameFromPath(const std::string& path) {
+  const size_t slash = path.find_last_of("/\\");
+  if (slash == std::string::npos) {
+    return path;
+  }
+  return path.substr(slash + 1);
+}
+
+bool endsWithEpub(const std::string& name) {
+  constexpr char kExt[] = ".epub";
+  if (name.size() < 5) {
+    return false;
+  }
+  const size_t start = name.size() - 5;
+  for (size_t i = 0; i < 5; ++i) {
+    const char left = static_cast<char>(std::tolower(static_cast<unsigned char>(name[start + i])));
+    if (left != kExt[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+std::string authorsLine(const std::vector<std::string>& authors) {
+  if (authors.empty()) {
+    return "Unknown author";
+  }
+  std::string out = authors[0];
+  for (size_t i = 1; i < authors.size(); ++i) {
+    out += ", " + authors[i];
+  }
+  return out;
+}
+
 } // namespace
 
 App::App(AppConfig config) : config_(config) {
-  books_ = {
-      "Drop EPUB files in books/", "The Time Machine.epub", "Pride and Prejudice.epub",
-      "A Study in Scarlet.epub",   "Example fixture.epub",
-  };
-
   settings_ = {
       "Theme: dark",
       "Font: Atkinson",
       "Reader mode: page + scroll",
       "Storage: ef0:/PSP/GAME/glyph/",
   };
+
+  refreshLibrary();
+  setReaderText("No book open", "Open an EPUB from the library.",
+                "Drop DRM-free EPUB files in " + defaultBooksPath() +
+                    " and open one from the library. The PoC supports simple text EPUBs.");
 }
 
 App::~App() {
@@ -223,8 +278,13 @@ void App::applyInput(const InputState& input) {
     running_ = false;
   }
 
-  const uint32_t now_ms = SDL_GetTicks();
-  updateShoulderHold(input.shoulder_l_down, input.shoulder_r_down, now_ms);
+  if (screen_ == Screen::Reader) {
+    const uint32_t now_ms = SDL_GetTicks();
+    updateShoulderHold(input.shoulder_l_down, input.shoulder_r_down, now_ms);
+  } else {
+    left_hold_started_ms_ = 0;
+    right_hold_started_ms_ = 0;
+  }
 
   if (input.menu) {
     screen_ = Screen::Settings;
@@ -241,8 +301,8 @@ void App::applyInput(const InputState& input) {
     if (input.up) {
       selected_book_ = std::max(0, selected_book_ - 1);
     }
-    if (input.accept || input.right || input.shoulder_r_click) {
-      screen_ = Screen::Reader;
+    if ((input.accept || input.right || input.shoulder_r_click) && !books_.empty()) {
+      openSelectedBook();
     }
     if (input.back || input.quit) {
       running_ = false;
@@ -251,15 +311,13 @@ void App::applyInput(const InputState& input) {
 
   case Screen::Reader:
     if (input.right || input.shoulder_r_click) {
-      ++reader_page_;
-      reader_scroll_ = 0;
+      reader_scroll_ = std::min(maxReaderScroll(), reader_scroll_ + linesPerPage());
     }
-    if ((input.left || input.shoulder_l_click) && reader_page_ > 1) {
-      --reader_page_;
-      reader_scroll_ = 0;
+    if (input.left || input.shoulder_l_click) {
+      reader_scroll_ = std::max(0, reader_scroll_ - linesPerPage());
     }
     if (input.down) {
-      reader_scroll_ += 1;
+      reader_scroll_ = std::min(maxReaderScroll(), reader_scroll_ + 1);
     }
     if (input.up) {
       reader_scroll_ = std::max(0, reader_scroll_ - 1);
@@ -304,12 +362,154 @@ void App::updateShoulderHold(bool left_down, bool right_down, uint32_t now_ms) {
     }
     if (now_ms - right_hold_started_ms_ >= kHoldThresholdMs &&
         now_ms - last_scroll_step_ms_ >= kScrollRepeatMs) {
-      reader_scroll_ += 1;
+      reader_scroll_ = std::min(maxReaderScroll(), reader_scroll_ + 1);
       last_scroll_step_ms_ = now_ms;
     }
   } else {
     right_hold_started_ms_ = 0;
   }
+}
+
+void App::refreshLibrary() {
+  books_.clear();
+
+  const std::string dir_path = defaultBooksPath();
+  DIR* dir = opendir(dir_path.c_str());
+  if (dir != nullptr) {
+    while (dirent* entry = readdir(dir)) {
+      const std::string name = entry->d_name;
+      if (!endsWithEpub(name)) {
+        continue;
+      }
+
+      BookEntry book;
+      book.path = joinPath(dir_path, name);
+      book.title = filenameFromPath(book.path);
+      book.subtitle = book.path;
+
+      EpubDocument document;
+      if (document.open(book.path)) {
+        book.readable = true;
+        book.title = document.book().metadata.title;
+        book.subtitle = authorsLine(document.book().metadata.authors);
+      } else {
+        book.subtitle = document.error();
+      }
+      books_.push_back(book);
+    }
+    closedir(dir);
+  }
+
+  std::sort(books_.begin(), books_.end(),
+            [](const BookEntry& left, const BookEntry& right) { return left.title < right.title; });
+
+  if (books_.empty()) {
+    books_.push_back({"Drop EPUB files in " + dir_path, "No books discovered", "", false});
+  }
+  selected_book_ = std::min<int>(selected_book_, static_cast<int>(books_.size()) - 1);
+}
+
+void App::openSelectedBook() {
+  if (selected_book_ < 0 || selected_book_ >= static_cast<int>(books_.size())) {
+    return;
+  }
+
+  const BookEntry& entry = books_[static_cast<size_t>(selected_book_)];
+  if (entry.path.empty()) {
+    setReaderText("Library empty", entry.subtitle,
+                  "Create a books directory next to the host binary or use "
+                  "ef0:/PSP/GAME/glyph/books/ on PSP Go.");
+    screen_ = Screen::Reader;
+    return;
+  }
+
+  EpubDocument document;
+  if (!document.open(entry.path)) {
+    setReaderText(filenameFromPath(entry.path), "Could not open EPUB", document.error());
+    screen_ = Screen::Reader;
+    return;
+  }
+
+  EpubTextResult text = document.readSpineText(0);
+  if (!text.ok) {
+    setReaderText(document.book().metadata.title, "Could not read first chapter", text.error);
+    screen_ = Screen::Reader;
+    return;
+  }
+
+  setReaderText(document.book().metadata.title, authorsLine(document.book().metadata.authors),
+                text.text);
+  screen_ = Screen::Reader;
+}
+
+void App::setReaderText(const std::string& title, const std::string& status,
+                        const std::string& text) {
+  reader_title_ = title;
+  reader_status_ = status;
+  reader_lines_ = wrapReaderText(text);
+  if (reader_lines_.empty()) {
+    reader_lines_.push_back("No readable text.");
+  }
+  reader_scroll_ = 0;
+}
+
+std::vector<std::string> App::wrapReaderText(const std::string& text) const {
+  std::vector<std::string> lines;
+  const int char_width = 7;
+  const int usable_width = std::max(40, config_.width - 36);
+  const size_t max_chars = static_cast<size_t>(std::max(12, usable_width / char_width));
+
+  std::istringstream input(text);
+  std::string paragraph;
+  while (std::getline(input, paragraph)) {
+    if (paragraph.empty()) {
+      if (!lines.empty() && !lines.back().empty()) {
+        lines.emplace_back();
+      }
+      continue;
+    }
+
+    std::istringstream words(paragraph);
+    std::string line;
+    std::string word;
+    while (words >> word) {
+      if (line.empty()) {
+        line = word;
+      } else if (line.size() + 1 + word.size() <= max_chars) {
+        line += " " + word;
+      } else {
+        lines.push_back(line);
+        line = word;
+      }
+
+      while (line.size() > max_chars) {
+        lines.push_back(line.substr(0, max_chars));
+        line.erase(0, max_chars);
+      }
+    }
+    if (!line.empty()) {
+      lines.push_back(line);
+    }
+    lines.emplace_back();
+  }
+
+  while (!lines.empty() && lines.back().empty()) {
+    lines.pop_back();
+  }
+  return lines;
+}
+
+int App::linesPerPage() const {
+  const int line_height = font_ != nullptr ? std::max(12, TTF_FontLineSkip(font_)) : 17;
+  const int usable_height = std::max(24, config_.height - 74);
+  return std::max(1, usable_height / line_height);
+}
+
+int App::maxReaderScroll() const {
+  if (reader_lines_.empty()) {
+    return 0;
+  }
+  return std::max(0, static_cast<int>(reader_lines_.size()) - linesPerPage());
 }
 
 void App::render() {
@@ -336,17 +536,22 @@ void App::render() {
 }
 
 void App::renderBrowser() {
-  drawText("ef0:/PSP/GAME/glyph/books/", 8, 32, kMuted);
+  drawText(defaultBooksPath(), 8, 32, kMuted);
 
   int y = 54;
   for (int i = 0; i < static_cast<int>(books_.size()); ++i) {
     const bool selected = i == selected_book_;
     if (selected) {
-      fillRect(6, y - 3, config_.width - 12, 22, kPanelHi);
-      strokeRect(6, y - 3, config_.width - 12, 22, kAccent);
+      fillRect(6, y - 3, config_.width - 12, 34, kPanelHi);
+      strokeRect(6, y - 3, config_.width - 12, 34, kAccent);
     }
-    drawText(books_[static_cast<size_t>(i)], 14, y, selected ? kText : kMuted);
-    y += 24;
+    const BookEntry& book = books_[static_cast<size_t>(i)];
+    drawText(book.title, 14, y, selected ? kText : kMuted);
+    drawText(book.subtitle, 18, y + 15, book.readable ? kMuted : kWarn);
+    y += 38;
+    if (y > config_.height - 42) {
+      break;
+    }
   }
 
   drawText("Cross/Enter open  Circle/Esc back  Start/S settings", 8, config_.height - 18, kMuted);
@@ -354,14 +559,27 @@ void App::renderBrowser() {
 
 void App::renderReader() {
   strokeRect(8, 34, config_.width - 16, config_.height - 62, kPanelHi);
-  drawText("Reader placeholder", 18, 44, kAccent);
-  drawText("EPUB text layout will appear here.", 18, 68, kText);
-  drawText("L/Q click: previous page", 18, 94, kMuted);
-  drawText("R/E click: next page", 18, 116, kMuted);
-  drawText("Hold L/R: scroll up/down", 18, 138, kMuted);
-  drawText("Scroll offset: " + std::to_string(reader_scroll_), 18, 166, kWarn);
-  drawTextRight("page " + std::to_string(reader_page_), config_.width - 14, config_.height - 20,
-                kMuted);
+  drawText(reader_title_, 18, 44, kAccent);
+  drawText(reader_status_, 18, 62, kMuted);
+
+  const int line_height = font_ != nullptr ? std::max(12, TTF_FontLineSkip(font_)) : 17;
+  const int lines_per_page = linesPerPage();
+  int y = 84;
+  for (int i = 0; i < lines_per_page; ++i) {
+    const int line_index = reader_scroll_ + i;
+    if (line_index >= static_cast<int>(reader_lines_.size())) {
+      break;
+    }
+    drawText(reader_lines_[static_cast<size_t>(line_index)], 18, y, kText);
+    y += line_height;
+  }
+
+  const int total_pages =
+      std::max(1, (static_cast<int>(reader_lines_.size()) + lines_per_page - 1) / lines_per_page);
+  const int current_page = std::min(total_pages, (reader_scroll_ / lines_per_page) + 1);
+  drawText("L/Q prev  R/E next  hold L/R scroll", 12, config_.height - 20, kMuted);
+  drawTextRight("page " + std::to_string(current_page) + "/" + std::to_string(total_pages),
+                config_.width - 14, config_.height - 20, kMuted);
 }
 
 void App::renderSettings() {

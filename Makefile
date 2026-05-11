@@ -22,6 +22,7 @@ help:
 		'  make run-host       Build and run host SDL2 app' \
 		'  make test           Build host app/tests and run CTest' \
 		'  make psp            Configure and build PSP EBOOT.PBP via psp-cmake' \
+		'  make sample-book    Generate books/glyph-sample.epub for local smoke tests' \
 		'  make run-ppsspp     Run PPSSPP harness detection or smoke launch' \
 		'  make format         Apply clang-format to source files' \
 		'  make check-format   Verify clang-format without modifying files' \
@@ -67,6 +68,10 @@ run-ppsspp:
 	else \
 		echo 'PPSSPP harness not present.'; \
 	fi
+
+.PHONY: sample-book
+sample-book:
+	$(PYTHON) tools/dev/make_sample_epub.py
 
 .PHONY: format
 format:

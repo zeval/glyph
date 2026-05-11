@@ -35,6 +35,13 @@ public:
   void shutdown();
 
 private:
+  struct BookEntry {
+    std::string title;
+    std::string subtitle;
+    std::string path;
+    bool readable = false;
+  };
+
   struct InputState {
     bool up = false;
     bool down = false;
@@ -57,6 +64,12 @@ private:
   void pollPlatformInput(InputState& input);
   void applyInput(const InputState& input);
   void updateShoulderHold(bool left_down, bool right_down, uint32_t now_ms);
+  void refreshLibrary();
+  void openSelectedBook();
+  void setReaderText(const std::string& title, const std::string& status, const std::string& text);
+  std::vector<std::string> wrapReaderText(const std::string& text) const;
+  int linesPerPage() const;
+  int maxReaderScroll() const;
   void render();
   void renderBrowser();
   void renderReader();
@@ -75,7 +88,6 @@ private:
   Screen screen_ = Screen::Browser;
   int selected_book_ = 0;
   int selected_setting_ = 0;
-  int reader_page_ = 1;
   int reader_scroll_ = 0;
   uint32_t left_hold_started_ms_ = 0;
   uint32_t right_hold_started_ms_ = 0;
@@ -83,7 +95,10 @@ private:
   bool previous_platform_l_ = false;
   bool previous_platform_r_ = false;
 
-  std::vector<std::string> books_;
+  std::vector<BookEntry> books_;
+  std::string reader_title_;
+  std::string reader_status_;
+  std::vector<std::string> reader_lines_;
   std::array<std::string, 4> settings_;
 };
 

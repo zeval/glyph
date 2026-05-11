@@ -38,6 +38,7 @@ export PATH="$PATH:$PSPDEV/bin"
 Host app:
 
 ```sh
+make sample-book
 make host
 make run-host
 make test
