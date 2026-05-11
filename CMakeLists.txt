@@ -161,6 +161,7 @@ if(GLYPH_BUILD_TESTS AND NOT PSP AND NOT GLYPH_BUILD_PSP)
       tests/epub_tests.cpp
       tests/smoke_tests.cpp
       tests/text_layout_tests.cpp
+      tests/zip_tests.cpp
     )
     target_include_directories(glyph_tests PRIVATE src)
     target_compile_features(glyph_tests PRIVATE cxx_std_17)
