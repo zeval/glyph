@@ -2,7 +2,6 @@
 /build-host/
 /build-psp/
 /books/*.epub
-__pycache__/
 /.cache/
 *.o
 *.elf
@@ -11,4 +10,6 @@ __pycache__/
 *.sfo
 *.log
 *.tmp
+__pycache__/
+*.pyc
 .DS_Store

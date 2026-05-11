@@ -2,8 +2,10 @@
 
 BUILD_HOST ?= build/host
 BUILD_PSP ?= build/psp
+FIXTURE_DIR ?= build/fixtures
 HOST_TARGET ?= glyph
 PSP_TARGET ?= glyph
+TINY_EPUB ?= $(FIXTURE_DIR)/tiny.epub
 
 CMAKE ?= cmake
 CTEST ?= ctest
@@ -21,6 +23,7 @@ help:
 		'  make host           Configure and build host SDL2 app' \
 		'  make run-host       Build and run host SDL2 app' \
 		'  make test           Build host app/tests and run CTest' \
+		'  make fixture-epub   Generate a deterministic tiny EPUB fixture' \
 		'  make psp            Configure and build PSP EBOOT.PBP via psp-cmake' \
 		'  make sample-book    Generate books/glyph-sample.epub for local smoke tests' \
 		'  make run-ppsspp     Run PPSSPP harness detection or smoke launch' \
@@ -49,6 +52,10 @@ test:
 	$(CMAKE) --build $(BUILD_HOST)
 	$(CTEST) --test-dir $(BUILD_HOST) --output-on-failure
 
+.PHONY: fixture-epub
+fixture-epub:
+	$(PYTHON) tools/fixtures/make_tiny_epub.py --output "$(TINY_EPUB)" --force --check --sha256
+
 .PHONY: psp
 psp:
 	@command -v $(PSP_CMAKE) >/dev/null || { echo 'Missing psp-cmake. Run make check-deps.'; exit 1; }
@@ -71,7 +78,7 @@ run-ppsspp:
 
 .PHONY: sample-book
 sample-book:
-	$(PYTHON) tools/dev/make_sample_epub.py
+	$(PYTHON) tools/fixtures/make_tiny_epub.py --output books/glyph-sample.epub --force --check
 
 .PHONY: format
 format:

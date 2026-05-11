@@ -53,6 +53,19 @@ Adjust the timeout:
 python3 tools/harness/run_ppsspp_smoke.py --run --timeout 3
 ```
 
+## Test EPUB Input
+
+Generate a deterministic EPUB fixture when parser or reader checks need a small
+book file:
+
+```sh
+make fixture-epub
+```
+
+The generated file defaults to `build/fixtures/tiny.epub`. It is not required for
+PPSSPP detection, and the harness still launches the emulator only when `--run`
+is passed.
+
 ## Install And Build Hooks
 
 Install PPSSPP separately using the platform's normal packaging route before

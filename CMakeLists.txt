@@ -139,6 +139,21 @@ endif()
 
 if(GLYPH_BUILD_TESTS AND NOT PSP AND NOT GLYPH_BUILD_PSP)
   include(CTest)
+  find_package(Python3 COMPONENTS Interpreter QUIET)
+  if(Python3_FOUND)
+    add_test(
+      NAME glyph.fixture_tiny_epub
+      COMMAND
+        ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/tools/fixtures/make_tiny_epub.py
+        --output ${CMAKE_CURRENT_BINARY_DIR}/fixtures/tiny.epub
+        --force
+        --check
+    )
+  else()
+    message(STATUS "Python3 interpreter not found; EPUB fixture test is skipped.")
+  endif()
+
   find_package(Catch2 3 QUIET)
   if(Catch2_FOUND)
     add_executable(glyph_tests
