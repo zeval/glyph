@@ -98,6 +98,7 @@ private:
   bool previous_platform_r_ = false;
 
   std::vector<BookEntry> books_;
+  std::string books_path_;
   std::string reader_title_;
   std::string reader_status_;
   std::vector<std::string> reader_lines_;

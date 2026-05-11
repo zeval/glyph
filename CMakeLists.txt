@@ -17,6 +17,7 @@ add_library(glyph_document
 
 add_executable(glyph
   src/glyph_app.cpp
+  src/library.cpp
   src/main.cpp
 )
 
@@ -141,10 +142,12 @@ if(GLYPH_BUILD_TESTS AND NOT PSP AND NOT GLYPH_BUILD_PSP)
   find_package(Catch2 3 QUIET)
   if(Catch2_FOUND)
     add_executable(glyph_tests
+      src/library.cpp
       tests/epub_tests.cpp
       tests/smoke_tests.cpp
       tests/text_layout_tests.cpp
     )
+    target_include_directories(glyph_tests PRIVATE src)
     target_compile_features(glyph_tests PRIVATE cxx_std_17)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
       target_compile_options(glyph_tests PRIVATE

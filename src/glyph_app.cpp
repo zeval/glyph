@@ -1,13 +1,11 @@
 #include "glyph_app.h"
 
 #include "epub.h"
+#include "library.h"
 
 #include <SDL_image.h>
 
-#include <dirent.h>
-
 #include <algorithm>
-#include <cctype>
 #include <cstdio>
 #include <sstream>
 
@@ -42,44 +40,6 @@ const char* screenName(Screen screen) {
   return "glyph";
 }
 
-std::string defaultBooksPath() {
-#if defined(GLYPH_PLATFORM_PSP)
-  return "ef0:/PSP/GAME/glyph/books/";
-#else
-  return "books/";
-#endif
-}
-
-std::string joinPath(const std::string& dir, const std::string& name) {
-  if (dir.empty() || dir.back() == '/') {
-    return dir + name;
-  }
-  return dir + "/" + name;
-}
-
-std::string filenameFromPath(const std::string& path) {
-  const size_t slash = path.find_last_of("/\\");
-  if (slash == std::string::npos) {
-    return path;
-  }
-  return path.substr(slash + 1);
-}
-
-bool endsWithEpub(const std::string& name) {
-  constexpr char kExt[] = ".epub";
-  if (name.size() < 5) {
-    return false;
-  }
-  const size_t start = name.size() - 5;
-  for (size_t i = 0; i < 5; ++i) {
-    const char left = static_cast<char>(std::tolower(static_cast<unsigned char>(name[start + i])));
-    if (left != kExt[i]) {
-      return false;
-    }
-  }
-  return true;
-}
-
 std::string authorsLine(const std::vector<std::string>& authors) {
   if (authors.empty()) {
     return "Unknown author";
@@ -98,12 +58,12 @@ App::App(AppConfig config) : config_(config) {
       "Theme: dark",
       "Font: Atkinson",
       "Reader mode: page + scroll",
-      "Storage: ef0:/PSP/GAME/glyph/",
+      std::string("Storage: ") + defaultStorageRootPath(),
   };
 
   refreshLibrary();
   setReaderText("No book open", "Open an EPUB from the library.",
-                "Drop DRM-free EPUB files in " + defaultBooksPath() +
+                std::string("Drop DRM-free EPUB files in ") + defaultBooksPath() +
                     " and open one from the library. The PoC supports simple text EPUBs.");
   if (!config_.initial_book_path.empty()) {
     openBookPath(config_.initial_book_path);
@@ -299,7 +259,8 @@ void App::applyInput(const InputState& input) {
   switch (screen_) {
   case Screen::Browser:
     if (input.down) {
-      selected_book_ = std::min<int>(selected_book_ + 1, static_cast<int>(books_.size()) - 1);
+      const int last_book = books_.empty() ? 0 : static_cast<int>(books_.size()) - 1;
+      selected_book_ = std::min<int>(selected_book_ + 1, last_book);
     }
     if (input.up) {
       selected_book_ = std::max(0, selected_book_ - 1);
@@ -376,20 +337,15 @@ void App::updateShoulderHold(bool left_down, bool right_down, uint32_t now_ms) {
 void App::refreshLibrary() {
   books_.clear();
 
-  const std::string dir_path = defaultBooksPath();
-  DIR* dir = opendir(dir_path.c_str());
-  if (dir != nullptr) {
-    while (dirent* entry = readdir(dir)) {
-      const std::string name = entry->d_name;
-      if (!endsWithEpub(name)) {
-        continue;
-      }
+  const LibraryScanResult library = discoverLibrary();
+  books_path_ = library.books_path;
+  for (const LibraryBook& discovered : library.books) {
+    BookEntry book;
+    book.path = discovered.file_path;
+    book.title = discovered.display_name;
+    book.subtitle = discovered.sample ? "No books discovered" : discovered.file_path;
 
-      BookEntry book;
-      book.path = joinPath(dir_path, name);
-      book.title = filenameFromPath(book.path);
-      book.subtitle = book.path;
-
+    if (!book.path.empty()) {
       EpubDocument document;
       if (document.open(book.path)) {
         book.readable = true;
@@ -398,16 +354,8 @@ void App::refreshLibrary() {
       } else {
         book.subtitle = document.error();
       }
-      books_.push_back(book);
     }
-    closedir(dir);
-  }
-
-  std::sort(books_.begin(), books_.end(),
-            [](const BookEntry& left, const BookEntry& right) { return left.title < right.title; });
-
-  if (books_.empty()) {
-    books_.push_back({"Drop EPUB files in " + dir_path, "No books discovered", "", false});
+    books_.push_back(book);
   }
   selected_book_ = std::min<int>(selected_book_, static_cast<int>(books_.size()) - 1);
 }
@@ -432,7 +380,7 @@ void App::openSelectedBook() {
 void App::openBookPath(const std::string& path) {
   EpubDocument document;
   if (!document.open(path)) {
-    setReaderText(filenameFromPath(path), "Could not open EPUB", document.error());
+    setReaderText(displayNameForPath(path), "Could not open EPUB", document.error());
     screen_ = Screen::Reader;
     return;
   }
@@ -543,7 +491,7 @@ void App::render() {
 }
 
 void App::renderBrowser() {
-  drawText(defaultBooksPath(), 8, 32, kMuted);
+  drawText(books_path_, 8, 32, kMuted);
 
   int y = 54;
   for (int i = 0; i < static_cast<int>(books_.size()); ++i) {
