@@ -1,0 +1,12 @@
+/build/
+/build-host/
+/build-psp/
+/.cache/
+*.o
+*.elf
+*.prx
+*.PBP
+*.sfo
+*.log
+*.tmp
+.DS_Store
