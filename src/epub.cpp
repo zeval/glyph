@@ -523,6 +523,37 @@ EpubTextResult EpubDocument::readFirstReadableSpineText() const {
   return result;
 }
 
+EpubTextResult EpubDocument::readAllReadableSpineText() const {
+  EpubTextResult combined;
+  EpubTextResult last_result;
+  bool found_text = false;
+
+  for (size_t i = 0; i < book_.spine.size(); ++i) {
+    EpubTextResult result = readSpineText(i);
+    if (!result.ok) {
+      last_result = result;
+      continue;
+    }
+
+    if (!found_text) {
+      combined.spine_index = result.spine_index;
+      found_text = true;
+    } else {
+      combined.text += "\n\n";
+    }
+    combined.text += result.text;
+  }
+
+  combined.ok = found_text;
+  if (!combined.ok) {
+    combined.error =
+        last_result.error.empty()
+            ? "EPUB spine did not contain readable text"
+            : "EPUB spine did not contain readable text; last error: " + last_result.error;
+  }
+  return combined;
+}
+
 std::string extractXhtmlText(const std::string& xhtml) {
   std::string out;
   out.reserve(xhtml.size());

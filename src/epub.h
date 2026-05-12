@@ -54,6 +54,7 @@ public:
   const EpubBook& book() const;
   EpubTextResult readSpineText(size_t spine_index) const;
   EpubTextResult readFirstReadableSpineText() const;
+  EpubTextResult readAllReadableSpineText() const;
 
 private:
   ZipArchive archive_;

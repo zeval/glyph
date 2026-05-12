@@ -169,6 +169,40 @@ bool writeEpubWithEmptyTitlePage(const std::string& path) {
       });
 }
 
+bool writeEpubWithMultipleReadableSpineItems(const std::string& path) {
+  return writeStoredZip(
+      path,
+      {
+          {"mimetype", "application/epub+zip"},
+          {"META-INF/container.xml",
+           "<?xml version=\"1.0\"?>"
+           "<container version=\"1.0\" xmlns=\"urn:oasis:names:tc:opendocument:xmlns:container\">"
+           "<rootfiles><rootfile full-path=\"OPS/package.opf\" "
+           "media-type=\"application/oebps-package+xml\"/></rootfiles></container>"},
+          {"OPS/package.opf",
+           "<?xml version=\"1.0\"?>"
+           "<package version=\"2.0\" xmlns=\"http://www.idpf.org/2007/opf\">"
+           "<metadata xmlns:dc=\"http://purl.org/dc/elements/1.1/\">"
+           "<dc:title>Multi Chapter Book</dc:title>"
+           "<dc:creator>Ada Reader</dc:creator>"
+           "<dc:language>en</dc:language>"
+           "<dc:identifier>multi-id</dc:identifier>"
+           "</metadata>"
+           "<manifest>"
+           "<item id=\"chap1\" href=\"chapter1.xhtml\" media-type=\"application/xhtml+xml\"/>"
+           "<item id=\"chap2\" href=\"chapter2.xhtml\" media-type=\"application/xhtml+xml\"/>"
+           "</manifest>"
+           "<spine><itemref idref=\"chap1\"/><itemref idref=\"chap2\"/></spine>"
+           "</package>"},
+          {"OPS/chapter1.xhtml", "<?xml version=\"1.0\"?>"
+                                 "<html xmlns=\"http://www.w3.org/1999/xhtml\"><body>"
+                                 "<h1>Chapter One</h1><p>First chapter text.</p></body></html>"},
+          {"OPS/chapter2.xhtml", "<?xml version=\"1.0\"?>"
+                                 "<html xmlns=\"http://www.w3.org/1999/xhtml\"><body>"
+                                 "<h1>Chapter Two</h1><p>Second chapter text.</p></body></html>"},
+      });
+}
+
 } // namespace
 
 TEST_CASE("xhtml extraction keeps readable text") {
@@ -236,6 +270,24 @@ TEST_CASE("epub document skips empty title page spine items") {
   CHECK(chapter.spine_index == 1);
   CHECK(chapter.text.find("Chapter One") != std::string::npos);
   CHECK(chapter.text.find("Readable chapter text.") != std::string::npos);
+
+  std::remove(path.c_str());
+}
+
+TEST_CASE("epub document combines readable spine items") {
+  const std::string path = tempEpubPath();
+  REQUIRE(writeEpubWithMultipleReadableSpineItems(path));
+
+  glyph::EpubDocument document;
+  REQUIRE(document.open(path));
+
+  const glyph::EpubTextResult book_text = document.readAllReadableSpineText();
+  REQUIRE(book_text.ok);
+  CHECK(book_text.spine_index == 0);
+  CHECK(book_text.text.find("Chapter One") != std::string::npos);
+  CHECK(book_text.text.find("First chapter text.") != std::string::npos);
+  CHECK(book_text.text.find("Chapter Two") != std::string::npos);
+  CHECK(book_text.text.find("Second chapter text.") != std::string::npos);
 
   std::remove(path.c_str());
 }

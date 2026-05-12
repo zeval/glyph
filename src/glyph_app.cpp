@@ -80,6 +80,11 @@ App::~App() {
 }
 
 bool App::init() {
+#if defined(GLYPH_PLATFORM_PSP)
+  SDL_SetHint(SDL_HINT_RENDER_DRIVER, "software");
+  SDL_SetHint(SDL_HINT_FRAMEBUFFER_ACCELERATION, "0");
+#endif
+
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) != 0) {
     std::fprintf(stderr, "SDL_Init failed: %s\n", SDL_GetError());
     return false;
@@ -102,7 +107,11 @@ bool App::init() {
     return false;
   }
 
+#if defined(GLYPH_PLATFORM_PSP)
+  renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_SOFTWARE);
+#else
   renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+#endif
   if (renderer_ == nullptr) {
     renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_SOFTWARE);
   }
@@ -111,6 +120,7 @@ bool App::init() {
     return false;
   }
 
+  SDL_RenderSetLogicalSize(renderer_, config_.width, config_.height);
   SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_BLEND);
   loadFont();
   running_ = true;
@@ -392,7 +402,7 @@ void App::openBookPath(const std::string& path) {
     return;
   }
 
-  EpubTextResult text = document.readFirstReadableSpineText();
+  EpubTextResult text = document.readAllReadableSpineText();
   if (!text.ok) {
     setReaderText(document.book().metadata.title, "Could not read EPUB text", text.error);
     screen_ = Screen::Reader;
@@ -470,8 +480,11 @@ int App::maxReaderScroll() const {
 }
 
 void App::render() {
+  SDL_RenderSetClipRect(renderer_, nullptr);
+  SDL_RenderSetViewport(renderer_, nullptr);
   SDL_SetRenderDrawColor(renderer_, kBg.r, kBg.g, kBg.b, kBg.a);
   SDL_RenderClear(renderer_);
+  fillRect(0, 0, config_.width, config_.height, kBg);
 
   fillRect(0, 0, config_.width, 24, kPanel);
   drawText("glyph", 8, 5, kAccent);
