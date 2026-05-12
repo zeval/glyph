@@ -55,6 +55,13 @@ Elements:
 - Battery/time optional.
 - Bookmark indicator optional.
 
+Current direction:
+
+- The main reader should keep only one thin status bar.
+- The status bar should show book title, current chapter, and page/progress.
+- Button hints should move out of the main reader surface. Temporary home: settings/help.
+- TODO(ui): add a dedicated Start/help overlay for reader controls once the menu model exists.
+
 Controls:
 
 - R click: scroll down within the current page; jump to next page at the page edge.

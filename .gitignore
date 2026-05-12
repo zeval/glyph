@@ -2,6 +2,7 @@
 /build-host/
 /build-psp/
 /books/*.epub
+/saves/
 /.cache/
 *.o
 *.elf

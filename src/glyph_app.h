@@ -11,6 +11,8 @@
 
 namespace glyph {
 
+struct BookProgress;
+
 enum class Screen {
   Browser,
   Reader,
@@ -41,7 +43,10 @@ private:
     std::string subtitle;
     std::string path;
     std::string cover_image_path;
+    std::string progress_label;
+    int progress_percent = 0;
     bool readable = false;
+    bool has_progress = false;
   };
 
   struct InputState {
@@ -69,9 +74,18 @@ private:
     uint32_t last_used = 0;
   };
 
+  struct ReaderChapter {
+    std::string title;
+    int start_line = 0;
+    int end_line = 0;
+    size_t spine_index = 0;
+  };
+
   void handleEvent(const SDL_Event& event, InputState& input);
   void pollPlatformInput(InputState& input);
   void applyInput(const InputState& input);
+  void saveCurrentProgress();
+  void updateBookProgress(const BookProgress& progress);
   void pageReaderForward();
   void pageReaderBackward();
   void stepOrPageReaderForward();
@@ -84,6 +98,10 @@ private:
   void updateSelectedCover();
   void drawCoverPreview(int x, int y, int w, int h);
   std::vector<std::string> wrapReaderText(const std::string& text) const;
+  std::string currentChapterTitle() const;
+  std::string readerProgressText() const;
+  int firstVisibleBook() const;
+  int visibleBookCount() const;
   int readerLineHeight() const;
   int readerTextWidth() const;
   int readerTextHeight() const;
@@ -99,6 +117,7 @@ private:
   void renderSettings();
   void drawText(const std::string& text, int x, int y, SDL_Color color);
   void drawTextRight(const std::string& text, int right_x, int y, SDL_Color color);
+  void drawTextClipped(const std::string& text, int x, int y, int max_width, SDL_Color color);
   void fillRect(int x, int y, int w, int h, SDL_Color color);
   void strokeRect(int x, int y, int w, int h, SDL_Color color);
   bool loadFont();
@@ -123,11 +142,13 @@ private:
   std::string books_path_;
   std::string reader_title_;
   std::string reader_status_;
+  std::string reader_book_path_;
   std::string reader_text_;
   std::vector<std::string> reader_lines_;
+  std::vector<ReaderChapter> reader_chapters_;
   std::vector<TextTextureEntry> text_cache_;
   uint32_t text_cache_tick_ = 0;
-  std::array<std::string, 4> settings_;
+  std::array<std::string, 6> settings_;
 };
 
 } // namespace glyph

@@ -2,11 +2,13 @@
 
 #include "epub.h"
 #include "library.h"
+#include "progress.h"
 #include "text_layout.h"
 
 #include <SDL_image.h>
 
 #include <algorithm>
+#include <cctype>
 #include <cstdio>
 
 #if defined(GLYPH_PLATFORM_PSP)
@@ -26,14 +28,12 @@ constexpr SDL_Color kMuted = {148, 156, 160, 255};
 constexpr SDL_Color kAccent = {98, 164, 168, 255};
 constexpr SDL_Color kWarn = {204, 166, 92, 255};
 
-constexpr int kReaderFrameX = 8;
-constexpr int kReaderFrameY = 32;
-constexpr int kReaderTextX = 14;
-constexpr int kReaderTitleY = 42;
-constexpr int kReaderStatusY = 59;
-constexpr int kReaderTextY = 78;
-constexpr int kReaderFooterHeight = 26;
-constexpr int kReaderTextBottomPadding = 6;
+constexpr int kTopBarHeight = 24;
+constexpr int kReaderTextX = 10;
+constexpr int kReaderTextY = kTopBarHeight + 6;
+constexpr int kReaderTextBottomPadding = 4;
+constexpr int kBrowserListWidth = 282;
+constexpr int kBrowserRowHeight = 42;
 constexpr size_t kTextTextureCacheLimit = 160;
 #if defined(GLYPH_PLATFORM_PSP)
 constexpr int kUiFontSize = 15;
@@ -68,6 +68,63 @@ bool sameColor(SDL_Color a, SDL_Color b) {
   return a.r == b.r && a.g == b.g && a.b == b.b && a.a == b.a;
 }
 
+std::string trimAndCollapse(const std::string& value) {
+  std::string out;
+  bool pending_space = false;
+  for (const char ch : value) {
+    if (std::isspace(static_cast<unsigned char>(ch)) != 0) {
+      pending_space = !out.empty();
+      continue;
+    }
+    if (pending_space) {
+      out.push_back(' ');
+      pending_space = false;
+    }
+    out.push_back(ch);
+  }
+  return out;
+}
+
+std::string shortenText(const std::string& value, size_t max_chars) {
+  if (value.size() <= max_chars) {
+    return value;
+  }
+  if (max_chars <= 3) {
+    return value.substr(0, max_chars);
+  }
+  return value.substr(0, max_chars - 3) + "...";
+}
+
+std::string firstReadableLine(const std::string& text) {
+  std::string line;
+  for (size_t i = 0; i <= text.size(); ++i) {
+    const char ch = i < text.size() ? text[i] : '\n';
+    if (ch == '\r' || ch == '\n') {
+      const std::string trimmed = trimAndCollapse(line);
+      if (!trimmed.empty()) {
+        return shortenText(trimmed, 42);
+      }
+      line.clear();
+      continue;
+    }
+    line.push_back(ch);
+  }
+  return "";
+}
+
+std::string chapterTitleFor(const EpubSpineItem& spine, const std::string& text,
+                            int chapter_number) {
+  const std::string line = firstReadableLine(text);
+  if (!line.empty()) {
+    return line;
+  }
+  const std::string name = displayNameForPath(spine.href);
+  if (!name.empty()) {
+    return shortenText(name, 42);
+  }
+  return "Chapter " + std::to_string(chapter_number);
+}
+
 } // namespace
 
 App::App(AppConfig config) : config_(config) {
@@ -75,6 +132,8 @@ App::App(AppConfig config) : config_(config) {
       "Theme: dark",
       "Font: Atkinson",
       "Bumpers: scroll + edge page",
+      "D-pad: page/line navigation",
+      "Circle: save progress and return",
       std::string("Storage: ") + defaultStorageRootPath(),
   };
 
@@ -285,6 +344,9 @@ void App::pollPlatformInput(InputState& input) {
 
 void App::applyInput(const InputState& input) {
   if (input.quit) {
+    if (screen_ == Screen::Reader) {
+      saveCurrentProgress();
+    }
     running_ = false;
   }
 
@@ -292,6 +354,9 @@ void App::applyInput(const InputState& input) {
     screen_ = Screen::Settings;
   }
   if (input.toc) {
+    if (screen_ == Screen::Reader) {
+      saveCurrentProgress();
+    }
     screen_ = Screen::Browser;
   }
 
@@ -332,6 +397,7 @@ void App::applyInput(const InputState& input) {
       reader_scroll_ = std::max(0, reader_scroll_ - 1);
     }
     if (input.back) {
+      saveCurrentProgress();
       screen_ = Screen::Browser;
     }
     break;
@@ -348,6 +414,32 @@ void App::applyInput(const InputState& input) {
       screen_ = Screen::Reader;
     }
     break;
+  }
+}
+
+void App::saveCurrentProgress() {
+  if (reader_book_path_.empty() || reader_lines_.empty()) {
+    return;
+  }
+
+  BookProgress progress;
+  progress.file_path = reader_book_path_;
+  progress.reader_scroll = std::min(maxReaderScroll(), std::max(0, reader_scroll_));
+  progress.total_lines = static_cast<int>(reader_lines_.size());
+  progress.lines_per_page = linesPerPage();
+  if (saveBookProgress(defaultProgressPath(), progress)) {
+    updateBookProgress(progress);
+  }
+}
+
+void App::updateBookProgress(const BookProgress& progress) {
+  for (BookEntry& book : books_) {
+    if (book.path == progress.file_path) {
+      book.has_progress = true;
+      book.progress_label = progressSummary(progress);
+      book.progress_percent = progressPercent(progress);
+      return;
+    }
   }
 }
 
@@ -394,6 +486,7 @@ void App::refreshLibrary() {
   books_.clear();
 
   const LibraryScanResult library = discoverLibrary();
+  const std::vector<BookProgress> progress_entries = loadProgressFile(defaultProgressPath());
   books_path_ = library.books_path;
   for (const LibraryBook& discovered : library.books) {
     BookEntry book;
@@ -410,6 +503,12 @@ void App::refreshLibrary() {
         book.cover_image_path = document.book().cover_image_path;
       } else {
         book.subtitle = document.error();
+      }
+      const BookProgress progress = findBookProgress(progress_entries, book.path);
+      if (!progress.file_path.empty() && progressTotalPages(progress) > 0) {
+        book.has_progress = true;
+        book.progress_label = progressSummary(progress);
+        book.progress_percent = progressPercent(progress);
       }
     }
     books_.push_back(book);
@@ -442,15 +541,56 @@ void App::openBookPath(const std::string& path) {
     return;
   }
 
-  EpubTextResult text = document.readAllReadableSpineText();
-  if (!text.ok) {
-    setReaderText(document.book().metadata.title, "Could not read EPUB text", text.error);
+  reader_title_ = document.book().metadata.title;
+  reader_status_ = authorsLine(document.book().metadata.authors);
+  reader_book_path_ = path;
+  reader_text_.clear();
+  reader_lines_.clear();
+  reader_chapters_.clear();
+  reader_scroll_ = 0;
+
+  EpubTextResult last_result;
+  int chapter_number = 1;
+  for (size_t i = 0; i < document.book().spine.size(); ++i) {
+    EpubTextResult text = document.readSpineText(i);
+    if (!text.ok) {
+      last_result = text;
+      continue;
+    }
+
+    if (!reader_lines_.empty()) {
+      reader_lines_.emplace_back();
+      reader_text_ += "\n\n";
+    }
+
+    ReaderChapter chapter;
+    chapter.title =
+        chapterTitleFor(document.book().spine[i], text.text, static_cast<int>(chapter_number));
+    chapter.start_line = static_cast<int>(reader_lines_.size());
+    chapter.spine_index = i;
+
+    std::vector<std::string> chapter_lines = wrapReaderText(text.text);
+    reader_lines_.insert(reader_lines_.end(), chapter_lines.begin(), chapter_lines.end());
+    reader_text_ += text.text;
+
+    chapter.end_line = static_cast<int>(reader_lines_.size());
+    reader_chapters_.push_back(chapter);
+    ++chapter_number;
+  }
+
+  if (reader_lines_.empty()) {
+    const std::string error =
+        last_result.error.empty() ? "EPUB spine did not contain readable text" : last_result.error;
+    setReaderText(document.book().metadata.title, "Could not read EPUB text", error);
     screen_ = Screen::Reader;
     return;
   }
 
-  setReaderText(document.book().metadata.title, authorsLine(document.book().metadata.authors),
-                text.text);
+  const BookProgress progress =
+      findBookProgress(loadProgressFile(defaultProgressPath()), reader_book_path_);
+  if (progress.file_path == reader_book_path_ && progressTotalPages(progress) > 0) {
+    reader_scroll_ = std::min(maxReaderScroll(), std::max(0, progress.reader_scroll));
+  }
   screen_ = Screen::Reader;
 }
 
@@ -458,7 +598,9 @@ void App::setReaderText(const std::string& title, const std::string& status,
                         const std::string& text) {
   reader_title_ = title;
   reader_status_ = status;
+  reader_book_path_.clear();
   reader_text_ = text;
+  reader_chapters_.clear();
   reader_lines_ = wrapReaderText(text);
   if (reader_lines_.empty()) {
     reader_lines_.push_back("No readable text.");
@@ -595,8 +737,7 @@ int App::readerTextWidth() const {
 }
 
 int App::readerTextHeight() const {
-  const int footer_top = config_.height - kReaderFooterHeight;
-  const int text_bottom = footer_top - kReaderTextBottomPadding;
+  const int text_bottom = config_.height - kReaderTextBottomPadding;
   return std::max(readerLineHeight(), text_bottom - kReaderTextY);
 }
 
@@ -611,9 +752,53 @@ int App::maxReaderScroll() const {
   return std::max(0, static_cast<int>(reader_lines_.size()) - linesPerPage());
 }
 
+std::string App::currentChapterTitle() const {
+  if (reader_chapters_.empty()) {
+    return reader_status_;
+  }
+
+  const int line = std::min(static_cast<int>(reader_lines_.size()), std::max(0, reader_scroll_));
+  const ReaderChapter* best = &reader_chapters_.front();
+  for (const ReaderChapter& chapter : reader_chapters_) {
+    if (line >= chapter.start_line && line < chapter.end_line) {
+      return chapter.title;
+    }
+    if (line >= chapter.start_line) {
+      best = &chapter;
+    }
+  }
+  return best->title;
+}
+
+std::string App::readerProgressText() const {
+  BookProgress progress;
+  progress.file_path = reader_book_path_;
+  progress.reader_scroll = reader_scroll_;
+  progress.total_lines = static_cast<int>(reader_lines_.size());
+  progress.lines_per_page = linesPerPage();
+  return progressSummary(progress);
+}
+
+int App::visibleBookCount() const {
+  return std::max(1, (config_.height - 54) / kBrowserRowHeight + 1);
+}
+
+int App::firstVisibleBook() const {
+  const int count = static_cast<int>(books_.size());
+  const int visible_count = visibleBookCount();
+  if (count <= visible_count) {
+    return 0;
+  }
+
+  const int centered = selected_book_ - (visible_count / 2);
+  return std::min(count - visible_count, std::max(0, centered));
+}
+
 void App::prepareRenderResources() {
-  prepareText("glyph", kAccent);
-  prepareText(screenName(screen_), kMuted);
+  if (screen_ != Screen::Reader) {
+    prepareText("glyph", kAccent);
+    prepareText(screenName(screen_), kMuted);
+  }
 
   switch (screen_) {
   case Screen::Browser: {
@@ -621,19 +806,21 @@ void App::prepareRenderResources() {
     prepareText(books_path_, kMuted);
     prepareText("No cover", kMuted);
     prepareText("Cross/Enter open  Circle/Esc back  Start/S settings", kMuted);
-    const int visible_books =
-        std::min(static_cast<int>(books_.size()), std::max(1, (config_.height - 54) / 38 + 1));
-    for (int i = 0; i < visible_books; ++i) {
+    const int first = firstVisibleBook();
+    const int last = std::min(static_cast<int>(books_.size()), first + visibleBookCount());
+    for (int i = first; i < last; ++i) {
       prepareText(books_[static_cast<size_t>(i)].title, i == selected_book_ ? kText : kMuted);
       prepareText(books_[static_cast<size_t>(i)].subtitle,
                   books_[static_cast<size_t>(i)].readable ? kMuted : kWarn);
+      prepareText(books_[static_cast<size_t>(i)].progress_label, kMuted);
     }
     break;
   }
   case Screen::Reader: {
     const int line_count = linesPerPage();
     prepareText(reader_title_, kAccent);
-    prepareText(reader_status_, kMuted);
+    prepareText(currentChapterTitle(), kMuted);
+    prepareText(readerProgressText(), kMuted);
     for (int i = 0; i < line_count; ++i) {
       const int line_index = reader_scroll_ + i;
       if (line_index >= static_cast<int>(reader_lines_.size())) {
@@ -641,12 +828,6 @@ void App::prepareRenderResources() {
       }
       prepareText(reader_lines_[static_cast<size_t>(line_index)], kText);
     }
-    const int lines_per_page = linesPerPage();
-    const int total_pages =
-        std::max(1, (static_cast<int>(reader_lines_.size()) + lines_per_page - 1) / lines_per_page);
-    const int current_page = std::min(total_pages, (reader_scroll_ / lines_per_page) + 1);
-    prepareText("L/R scroll, page at edge  D-pad pages", kMuted);
-    prepareText("page " + std::to_string(current_page) + "/" + std::to_string(total_pages), kMuted);
     break;
   }
   case Screen::Settings:
@@ -738,9 +919,11 @@ void App::render() {
   SDL_SetRenderDrawColor(renderer_, kBg.r, kBg.g, kBg.b, kBg.a);
   SDL_RenderClear(renderer_);
 
-  fillRect(0, 0, config_.width, 24, kPanel);
-  drawText("glyph", 8, 5, kAccent);
-  drawTextRight(screenName(screen_), config_.width - 8, 5, kMuted);
+  if (screen_ != Screen::Reader) {
+    fillRect(0, 0, config_.width, kTopBarHeight, kPanel);
+    drawText("glyph", 8, 5, kAccent);
+    drawTextRight(screenName(screen_), config_.width - 8, 5, kMuted);
+  }
 
   switch (screen_) {
   case Screen::Browser:
@@ -763,30 +946,37 @@ void App::render() {
 void App::renderBrowser() {
   drawText(books_path_, 8, 32, kMuted);
 
-  constexpr int list_width = 282;
-  const int cover_x = list_width + 18;
+  const int cover_x = kBrowserListWidth + 18;
   const int cover_y = 42;
   const int cover_w = config_.width - cover_x - 14;
   const int cover_h = config_.height - cover_y - 42;
   drawCoverPreview(cover_x, cover_y, cover_w, cover_h);
 
-  SDL_Rect list_clip = {0, 28, list_width + 2, config_.height - 54};
+  SDL_Rect list_clip = {0, 28, kBrowserListWidth + 2, config_.height - 54};
   SDL_RenderSetClipRect(renderer_, &list_clip);
 
+  const int first = firstVisibleBook();
+  const int last = std::min(static_cast<int>(books_.size()), first + visibleBookCount());
   int y = 54;
-  for (int i = 0; i < static_cast<int>(books_.size()); ++i) {
+  for (int i = first; i < last; ++i) {
     const bool selected = i == selected_book_;
     if (selected) {
-      fillRect(6, y - 3, list_width - 12, 34, kPanelHi);
-      strokeRect(6, y - 3, list_width - 12, 34, kAccent);
+      fillRect(6, y - 3, kBrowserListWidth - 12, 38, kPanelHi);
+      strokeRect(6, y - 3, kBrowserListWidth - 12, 38, kAccent);
     }
     const BookEntry& book = books_[static_cast<size_t>(i)];
     drawText(book.title, 14, y, selected ? kText : kMuted);
-    drawText(book.subtitle, 18, y + 15, book.readable ? kMuted : kWarn);
-    y += 38;
-    if (y > config_.height - 42) {
-      break;
+    drawTextClipped(book.subtitle, 18, y + 15, book.has_progress ? 172 : 250,
+                    book.readable ? kMuted : kWarn);
+    if (book.has_progress) {
+      drawTextRight(book.progress_label, kBrowserListWidth - 14, y + 15, kMuted);
+      const int bar_x = 18;
+      const int bar_y = y + 31;
+      const int bar_w = kBrowserListWidth - 36;
+      fillRect(bar_x, bar_y, bar_w, 3, kPanel);
+      fillRect(bar_x, bar_y, std::max(1, (bar_w * book.progress_percent) / 100), 3, kAccent);
     }
+    y += kBrowserRowHeight;
   }
 
   SDL_RenderSetClipRect(renderer_, nullptr);
@@ -794,10 +984,11 @@ void App::renderBrowser() {
 }
 
 void App::renderReader() {
-  const int frame_h = std::max(1, config_.height - kReaderFooterHeight - kReaderFrameY);
-  strokeRect(kReaderFrameX, kReaderFrameY, config_.width - (kReaderFrameX * 2), frame_h, kPanelHi);
-  drawText(reader_title_, kReaderTextX, kReaderTitleY, kAccent);
-  drawText(reader_status_, kReaderTextX, kReaderStatusY, kMuted);
+  fillRect(0, 0, config_.width, kTopBarHeight, kPanel);
+  fillRect(0, kTopBarHeight, config_.width, 1, kPanelHi);
+  drawTextClipped(reader_title_, 8, 5, 174, kAccent);
+  drawTextClipped(currentChapterTitle(), 188, 5, 178, kMuted);
+  drawTextRight(readerProgressText(), config_.width - 8, 5, kMuted);
 
   const int line_height = readerLineHeight();
   const int lines_per_page = linesPerPage();
@@ -814,16 +1005,6 @@ void App::renderReader() {
     y += line_height;
   }
   SDL_RenderSetClipRect(renderer_, nullptr);
-
-  const int total_pages =
-      std::max(1, (static_cast<int>(reader_lines_.size()) + lines_per_page - 1) / lines_per_page);
-  const int current_page = std::min(total_pages, (reader_scroll_ / lines_per_page) + 1);
-  const int footer_top = config_.height - kReaderFooterHeight;
-  fillRect(0, footer_top, config_.width, kReaderFooterHeight, kPanel);
-  fillRect(0, footer_top, config_.width, 1, kPanelHi);
-  drawText("L/R scroll, page at edge  D-pad pages", 12, config_.height - 20, kMuted);
-  drawTextRight("page " + std::to_string(current_page) + "/" + std::to_string(total_pages),
-                config_.width - 14, config_.height - 20, kMuted);
 }
 
 void App::renderSettings() {
@@ -864,6 +1045,35 @@ void App::drawTextRight(const std::string& text, int right_x, int y, SDL_Color c
 
   SDL_Rect dst = {right_x - width, y, width, height};
   SDL_RenderCopy(renderer_, texture, nullptr, &dst);
+}
+
+void App::drawTextClipped(const std::string& text, int x, int y, int max_width, SDL_Color color) {
+  if (max_width <= 0) {
+    return;
+  }
+
+  SDL_Rect previous_clip = {};
+  const SDL_bool had_clip = SDL_RenderIsClipEnabled(renderer_);
+  if (had_clip == SDL_TRUE) {
+    SDL_RenderGetClipRect(renderer_, &previous_clip);
+  }
+
+  SDL_Rect clip = {x, y, max_width, config_.height - y};
+  if (had_clip == SDL_TRUE) {
+    const int left = std::max(clip.x, previous_clip.x);
+    const int top = std::max(clip.y, previous_clip.y);
+    const int right = std::min(clip.x + clip.w, previous_clip.x + previous_clip.w);
+    const int bottom = std::min(clip.y + clip.h, previous_clip.y + previous_clip.h);
+    clip = {left, top, std::max(0, right - left), std::max(0, bottom - top)};
+  }
+
+  SDL_RenderSetClipRect(renderer_, &clip);
+  drawText(text, x, y, color);
+  if (had_clip == SDL_TRUE) {
+    SDL_RenderSetClipRect(renderer_, &previous_clip);
+  } else {
+    SDL_RenderSetClipRect(renderer_, nullptr);
+  }
 }
 
 void App::fillRect(int x, int y, int w, int h, SDL_Color color) {
