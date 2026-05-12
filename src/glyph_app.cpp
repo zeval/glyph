@@ -28,6 +28,14 @@ constexpr SDL_Color kWarn = {204, 166, 92, 255};
 
 constexpr uint32_t kHoldThresholdMs = 320;
 constexpr uint32_t kScrollRepeatMs = 90;
+constexpr int kReaderFrameX = 8;
+constexpr int kReaderFrameY = 32;
+constexpr int kReaderTextX = 14;
+constexpr int kReaderTitleY = 42;
+constexpr int kReaderStatusY = 59;
+constexpr int kReaderTextY = 78;
+constexpr int kReaderFooterHeight = 26;
+constexpr int kReaderTextBottomPadding = 6;
 #if defined(GLYPH_PLATFORM_PSP)
 constexpr int kUiFontSize = 15;
 #else
@@ -529,7 +537,7 @@ std::vector<std::string> App::wrapReaderText(const std::string& text) const {
   std::vector<std::string> lines;
 
   TextLayoutConfig layout_config;
-  layout_config.viewport_width = config_.width;
+  layout_config.viewport_width = readerTextWidth();
   layout_config.viewport_height = 100000;
   layout_config.margin_left = 0;
   layout_config.margin_top = 0;
@@ -539,11 +547,12 @@ std::vector<std::string> App::wrapReaderText(const std::string& text) const {
   if (font_ != nullptr) {
     int sample_width = 0;
     int sample_height = 0;
-    if (TTF_SizeUTF8(font_, "abcdefghijklmnopqrstuvwxyz", &sample_width, &sample_height) == 0) {
-      layout_config.average_char_width = std::max(1, (sample_width + 25) / 26);
+    const char* sample = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    if (TTF_SizeUTF8(font_, sample, &sample_width, &sample_height) == 0) {
+      layout_config.average_char_width = std::max(1, sample_width / 52);
     }
   }
-  layout_config.line_height = font_ != nullptr ? std::max(12, TTF_FontLineSkip(font_)) : 17;
+  layout_config.line_height = readerLineHeight();
   layout_config.paragraph_spacing = layout_config.line_height / 2;
   layout_config.blank_line_height = layout_config.line_height;
 
@@ -566,10 +575,22 @@ std::vector<std::string> App::wrapReaderText(const std::string& text) const {
   return lines;
 }
 
+int App::readerLineHeight() const {
+  return font_ != nullptr ? std::max(12, TTF_FontLineSkip(font_)) : 17;
+}
+
+int App::readerTextWidth() const {
+  return std::max(1, config_.width - (kReaderTextX * 2));
+}
+
+int App::readerTextHeight() const {
+  const int footer_top = config_.height - kReaderFooterHeight;
+  const int text_bottom = footer_top - kReaderTextBottomPadding;
+  return std::max(readerLineHeight(), text_bottom - kReaderTextY);
+}
+
 int App::linesPerPage() const {
-  const int line_height = font_ != nullptr ? std::max(12, TTF_FontLineSkip(font_)) : 17;
-  const int usable_height = std::max(24, config_.height - 74);
-  return std::max(1, usable_height / line_height);
+  return std::max(1, readerTextHeight() / readerLineHeight());
 }
 
 int App::maxReaderScroll() const {
@@ -642,25 +663,33 @@ void App::renderBrowser() {
 }
 
 void App::renderReader() {
-  strokeRect(8, 34, config_.width - 16, config_.height - 62, kPanelHi);
-  drawText(reader_title_, 18, 44, kAccent);
-  drawText(reader_status_, 18, 62, kMuted);
+  const int frame_h = std::max(1, config_.height - kReaderFooterHeight - kReaderFrameY);
+  strokeRect(kReaderFrameX, kReaderFrameY, config_.width - (kReaderFrameX * 2), frame_h, kPanelHi);
+  drawText(reader_title_, kReaderTextX, kReaderTitleY, kAccent);
+  drawText(reader_status_, kReaderTextX, kReaderStatusY, kMuted);
 
-  const int line_height = font_ != nullptr ? std::max(12, TTF_FontLineSkip(font_)) : 17;
+  const int line_height = readerLineHeight();
   const int lines_per_page = linesPerPage();
-  int y = 84;
+  SDL_Rect text_clip = {kReaderTextX, kReaderTextY, readerTextWidth(), readerTextHeight()};
+  SDL_RenderSetClipRect(renderer_, &text_clip);
+
+  int y = kReaderTextY;
   for (int i = 0; i < lines_per_page; ++i) {
     const int line_index = reader_scroll_ + i;
     if (line_index >= static_cast<int>(reader_lines_.size())) {
       break;
     }
-    drawText(reader_lines_[static_cast<size_t>(line_index)], 18, y, kText);
+    drawText(reader_lines_[static_cast<size_t>(line_index)], kReaderTextX, y, kText);
     y += line_height;
   }
+  SDL_RenderSetClipRect(renderer_, nullptr);
 
   const int total_pages =
       std::max(1, (static_cast<int>(reader_lines_.size()) + lines_per_page - 1) / lines_per_page);
   const int current_page = std::min(total_pages, (reader_scroll_ / lines_per_page) + 1);
+  const int footer_top = config_.height - kReaderFooterHeight;
+  fillRect(0, footer_top, config_.width, kReaderFooterHeight, kPanel);
+  fillRect(0, footer_top, config_.width, 1, kPanelHi);
   drawText("L/Q prev  R/E next  hold L/R scroll", 12, config_.height - 20, kMuted);
   drawTextRight("page " + std::to_string(current_page) + "/" + std::to_string(total_pages),
                 config_.width - 14, config_.height - 20, kMuted);

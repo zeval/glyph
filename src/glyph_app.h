@@ -74,6 +74,9 @@ private:
   void updateSelectedCover();
   void drawCoverPreview(int x, int y, int w, int h);
   std::vector<std::string> wrapReaderText(const std::string& text) const;
+  int readerLineHeight() const;
+  int readerTextWidth() const;
+  int readerTextHeight() const;
   int linesPerPage() const;
   int maxReaderScroll() const;
   void render();
