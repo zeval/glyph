@@ -1,0 +1,86 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  host:
+    name: host (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Ubuntu dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            make \
+            pkg-config \
+            clang-format \
+            libsdl2-dev \
+            libsdl2-image-dev \
+            libsdl2-ttf-dev \
+            zlib1g-dev \
+            catch2
+
+      - name: Install macOS dependencies
+        if: runner.os == 'macOS'
+        run: |
+          brew install \
+            cmake \
+            pkg-config \
+            clang-format \
+            sdl2 \
+            sdl2_image \
+            sdl2_ttf \
+            catch2 \
+            zlib
+          echo "PKG_CONFIG_PATH=$(brew --prefix zlib)/lib/pkgconfig:${PKG_CONFIG_PATH}" >> "$GITHUB_ENV"
+
+      - name: Check dependencies
+        run: make check-deps
+
+      - name: Compile Python tooling
+        run: |
+          python3 -m py_compile \
+            tools/dev/check_deps.py \
+            tools/fixtures/make_tiny_epub.py \
+            tools/harness/run_ppsspp_smoke.py
+
+      - name: Check formatting
+        run: make check-format
+
+      - name: Generate EPUB fixture
+        run: make fixture-epub
+
+      - name: Run host tests
+        run: make test
+
+      - name: Run host smoke
+        if: runner.os == 'Linux'
+        run: |
+          set +e
+          timeout 2s env SDL_VIDEODRIVER=dummy ./build/host/glyph build/fixtures/tiny.epub
+          status=$?
+          set -e
+          if [ "$status" -eq 124 ]; then
+            exit 0
+          fi
+          exit "$status"

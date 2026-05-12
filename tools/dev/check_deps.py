@@ -30,6 +30,7 @@ PKG_CONFIG_MODULES = [
   ("sdl2", "host SDL2 app"),
   ("SDL2_image", "image decode path"),
   ("SDL2_ttf", "font rendering"),
+  ("zlib", "EPUB ZIP decompression"),
 ]
 
 
@@ -45,10 +46,10 @@ def run(args: list[str]) -> tuple[int, str]:
 def install_hint() -> str:
   system = platform.system().lower()
   if system == "darwin":
-    return "brew install cmake pkg-config clang-format sdl2 sdl2_image sdl2_ttf catch2"
+    return "brew install cmake pkg-config clang-format sdl2 sdl2_image sdl2_ttf catch2 zlib"
   if system == "linux":
     return ("sudo apt install cmake make pkg-config clang-format "
-            "libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev catch2")
+            "libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev zlib1g-dev catch2")
   return "Install CMake, Make, pkg-config, clang-format, SDL2, SDL2_image, SDL2_ttf, Catch2."
 
 

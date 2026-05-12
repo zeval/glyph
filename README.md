@@ -17,13 +17,13 @@ Ubuntu:
 
 ```sh
 sudo apt install cmake make pkg-config clang-format \
-  libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev catch2
+  libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev zlib1g-dev catch2
 ```
 
 macOS:
 
 ```sh
-brew install cmake pkg-config clang-format sdl2 sdl2_image sdl2_ttf catch2
+brew install cmake pkg-config clang-format sdl2 sdl2_image sdl2_ttf catch2 zlib
 ```
 
 PSP builds require PSPDEV/PSPSDK:
