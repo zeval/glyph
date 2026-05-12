@@ -150,8 +150,13 @@ bool nextTag(const std::string& xml, size_t& pos, XmlTag& tag) {
       if (end == std::string::npos) {
         return false;
       }
+      tag = {};
+      tag.start = start;
+      tag.end = end;
+      tag.content_start = end + 1;
+      tag.self_closing = true;
       pos = end + 1;
-      continue;
+      return true;
     }
 
     size_t cursor = start + 1;

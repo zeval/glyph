@@ -146,6 +146,22 @@ TEST_CASE("xhtml extraction keeps readable text") {
   REQUIRE(text.find("- Two") != std::string::npos);
 }
 
+TEST_CASE("xhtml extraction ignores declarations and head metadata") {
+  const std::string text = glyph::extractXhtmlText(
+      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+      "<!DOCTYPE html>"
+      "<html xmlns=\"http://www.w3.org/1999/xhtml\">"
+      "<head><title>Glyph Tiny Fixture</title></head>"
+      "<body><h1>Start</h1>"
+      "<p>This tiny EPUB is generated deterministically for glyph tests.</p>"
+      "<p>It has one spine item, one nav entry, and one NCX entry.</p>"
+      "</body></html>");
+
+  CHECK(text == "Start\n"
+                "This tiny EPUB is generated deterministically for glyph tests.\n"
+                "It has one spine item, one nav entry, and one NCX entry.");
+}
+
 TEST_CASE("epub document loads metadata, spine, and chapter text") {
   const std::string path = tempEpubPath();
   REQUIRE(writeTinyEpub(path));
