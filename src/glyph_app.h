@@ -60,6 +60,15 @@ private:
     bool quit = false;
   };
 
+  struct TextTextureEntry {
+    std::string text;
+    SDL_Color color = {0, 0, 0, 0};
+    SDL_Texture* texture = nullptr;
+    int width = 0;
+    int height = 0;
+    uint32_t last_used = 0;
+  };
+
   void handleEvent(const SDL_Event& event, InputState& input);
   void pollPlatformInput(InputState& input);
   void applyInput(const InputState& input);
@@ -75,15 +84,18 @@ private:
   void updateSelectedCover();
   void drawCoverPreview(int x, int y, int w, int h);
   std::vector<std::string> wrapReaderText(const std::string& text) const;
+  void appendWrappedParagraph(const std::string& paragraph, std::vector<std::string>& lines) const;
+  int measureTextWidth(const std::string& text) const;
   int readerLineHeight() const;
   int readerTextWidth() const;
   int readerTextHeight() const;
   int linesPerPage() const;
   int maxReaderScroll() const;
-  bool initFrameTexture();
-  void clearFrameTexture();
+  void prepareRenderResources();
+  void prepareText(const std::string& text, SDL_Color color);
+  SDL_Texture* textTextureFor(const std::string& text, SDL_Color color, int& width, int& height);
+  void clearTextCache();
   void render();
-  void renderFrame();
   void renderBrowser();
   void renderReader();
   void renderSettings();
@@ -98,11 +110,9 @@ private:
   SDL_Renderer* renderer_ = nullptr;
   TTF_Font* font_ = nullptr;
   SDL_Texture* cover_texture_ = nullptr;
-  SDL_Texture* frame_texture_ = nullptr;
   int cover_texture_book_ = -1;
   int cover_texture_width_ = 0;
   int cover_texture_height_ = 0;
-  bool frame_texture_enabled_ = false;
   bool running_ = false;
   bool needs_render_ = true;
   Screen screen_ = Screen::Browser;
@@ -115,7 +125,10 @@ private:
   std::string books_path_;
   std::string reader_title_;
   std::string reader_status_;
+  std::string reader_text_;
   std::vector<std::string> reader_lines_;
+  std::vector<TextTextureEntry> text_cache_;
+  uint32_t text_cache_tick_ = 0;
   std::array<std::string, 4> settings_;
 };
 

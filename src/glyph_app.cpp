@@ -2,7 +2,6 @@
 
 #include "epub.h"
 #include "library.h"
-#include "text_layout.h"
 
 #include <SDL_image.h>
 
@@ -34,6 +33,7 @@ constexpr int kReaderStatusY = 59;
 constexpr int kReaderTextY = 78;
 constexpr int kReaderFooterHeight = 26;
 constexpr int kReaderTextBottomPadding = 6;
+constexpr size_t kTextTextureCacheLimit = 160;
 #if defined(GLYPH_PLATFORM_PSP)
 constexpr int kUiFontSize = 15;
 #else
@@ -63,13 +63,40 @@ std::string authorsLine(const std::vector<std::string>& authors) {
   return out;
 }
 
+bool sameColor(SDL_Color a, SDL_Color b) {
+  return a.r == b.r && a.g == b.g && a.b == b.b && a.a == b.a;
+}
+
+bool isInlineSpace(char ch) {
+  return ch == ' ' || ch == '\t' || ch == '\f' || ch == '\v';
+}
+
+size_t utf8CharBytes(const std::string& text, size_t offset) {
+  if (offset >= text.size()) {
+    return 0;
+  }
+
+  const auto first = static_cast<unsigned char>(text[offset]);
+  size_t count = 1;
+  if ((first & 0x80u) == 0u) {
+    count = 1;
+  } else if ((first & 0xE0u) == 0xC0u) {
+    count = 2;
+  } else if ((first & 0xF0u) == 0xE0u) {
+    count = 3;
+  } else if ((first & 0xF8u) == 0xF0u) {
+    count = 4;
+  }
+  return std::min(count, text.size() - offset);
+}
+
 } // namespace
 
 App::App(AppConfig config) : config_(config) {
   settings_ = {
       "Theme: dark",
       "Font: Atkinson",
-      "Bumpers: step + page",
+      "Bumpers: scroll + edge page",
       std::string("Storage: ") + defaultStorageRootPath(),
   };
 
@@ -115,15 +142,10 @@ bool App::init() {
   }
 
 #if defined(GLYPH_PLATFORM_PSP)
-  renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_SOFTWARE | SDL_RENDERER_TARGETTEXTURE);
+  renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_SOFTWARE);
 #else
-  renderer_ = SDL_CreateRenderer(window_, -1,
-                                 SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC |
-                                     SDL_RENDERER_TARGETTEXTURE);
+  renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 #endif
-  if (renderer_ == nullptr) {
-    renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_SOFTWARE | SDL_RENDERER_TARGETTEXTURE);
-  }
   if (renderer_ == nullptr) {
     renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_SOFTWARE);
   }
@@ -134,8 +156,10 @@ bool App::init() {
 
   SDL_RenderSetLogicalSize(renderer_, config_.width, config_.height);
   SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_BLEND);
-  initFrameTexture();
   loadFont();
+  if (!reader_text_.empty()) {
+    reader_lines_ = wrapReaderText(reader_text_);
+  }
   running_ = true;
   needs_render_ = true;
   return true;
@@ -179,7 +203,7 @@ int App::run() {
 }
 
 void App::shutdown() {
-  clearFrameTexture();
+  clearTextCache();
   clearCoverTexture();
   if (font_ != nullptr) {
     TTF_CloseFont(font_);
@@ -456,6 +480,7 @@ void App::setReaderText(const std::string& title, const std::string& status,
                         const std::string& text) {
   reader_title_ = title;
   reader_status_ = status;
+  reader_text_ = text;
   reader_lines_ = wrapReaderText(text);
   if (reader_lines_.empty()) {
     reader_lines_.push_back("No readable text.");
@@ -522,7 +547,6 @@ void App::drawCoverPreview(int x, int y, int w, int h) {
   fillRect(x, y, w, h, kPanel);
   strokeRect(x, y, w, h, kPanelHi);
 
-  updateSelectedCover();
   if (cover_texture_ == nullptr || cover_texture_width_ <= 0 || cover_texture_height_ <= 0) {
     drawText("No cover", x + 18, y + h / 2 - 8, kMuted);
     return;
@@ -541,44 +565,109 @@ void App::drawCoverPreview(int x, int y, int w, int h) {
 
 std::vector<std::string> App::wrapReaderText(const std::string& text) const {
   std::vector<std::string> lines;
+  std::string paragraph;
+  bool pending_space = false;
 
-  TextLayoutConfig layout_config;
-  layout_config.viewport_width = readerTextWidth();
-  layout_config.viewport_height = 100000;
-  layout_config.margin_left = 0;
-  layout_config.margin_top = 0;
-  layout_config.margin_right = 0;
-  layout_config.margin_bottom = 0;
-  layout_config.average_char_width = 7;
-  if (font_ != nullptr) {
-    int sample_width = 0;
-    int sample_height = 0;
-    const char* sample = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    if (TTF_SizeUTF8(font_, sample, &sample_width, &sample_height) == 0) {
-      layout_config.average_char_width = std::max(1, sample_width / 52);
-    }
-  }
-  layout_config.line_height = readerLineHeight();
-  layout_config.paragraph_spacing = layout_config.line_height / 2;
-  layout_config.blank_line_height = layout_config.line_height;
-
-  const TextLayout layout = paginatePlainText(text, layout_config);
-  for (const TextLayoutPage& page : layout.pages) {
-    int next_y = 0;
-    for (const TextLayoutLine& line : page.lines) {
-      while (line.y - next_y >= layout_config.line_height) {
-        lines.emplace_back();
-        next_y += layout_config.line_height;
+  for (size_t i = 0; i < text.size(); ++i) {
+    const char ch = text[i];
+    if (ch == '\r' || ch == '\n') {
+      if (ch == '\r' && i + 1 < text.size() && text[i + 1] == '\n') {
+        ++i;
       }
-      lines.push_back(line.text);
-      next_y = line.y + layout_config.line_height;
+      appendWrappedParagraph(paragraph, lines);
+      paragraph.clear();
+      pending_space = false;
+      continue;
     }
+
+    if (isInlineSpace(ch)) {
+      pending_space = !paragraph.empty();
+      continue;
+    }
+
+    if (pending_space) {
+      paragraph.push_back(' ');
+      pending_space = false;
+    }
+    paragraph.push_back(ch);
   }
 
+  appendWrappedParagraph(paragraph, lines);
   while (!lines.empty() && lines.back().empty()) {
     lines.pop_back();
   }
   return lines;
+}
+
+void App::appendWrappedParagraph(const std::string& paragraph,
+                                 std::vector<std::string>& lines) const {
+  if (paragraph.empty()) {
+    lines.emplace_back();
+    return;
+  }
+
+  const int max_width = readerTextWidth();
+  std::string line;
+  size_t word_start = 0;
+  while (word_start < paragraph.size()) {
+    size_t word_end = paragraph.find(' ', word_start);
+    if (word_end == std::string::npos) {
+      word_end = paragraph.size();
+    }
+
+    const std::string word = paragraph.substr(word_start, word_end - word_start);
+    const std::string candidate = line.empty() ? word : line + " " + word;
+    if (measureTextWidth(candidate) <= max_width) {
+      line = candidate;
+    } else {
+      if (!line.empty()) {
+        lines.push_back(line);
+        line.clear();
+      }
+
+      if (measureTextWidth(word) <= max_width) {
+        line = word;
+      } else {
+        std::string chunk;
+        size_t offset = 0;
+        while (offset < word.size()) {
+          const size_t char_bytes = utf8CharBytes(word, offset);
+          const std::string next = word.substr(offset, char_bytes);
+          const std::string next_chunk = chunk + next;
+          if (!chunk.empty() && measureTextWidth(next_chunk) > max_width) {
+            lines.push_back(chunk);
+            chunk = next;
+          } else {
+            chunk = next_chunk;
+          }
+          offset += char_bytes;
+        }
+        line = chunk;
+      }
+    }
+
+    word_start = word_end + 1;
+  }
+
+  if (!line.empty()) {
+    lines.push_back(line);
+  }
+}
+
+int App::measureTextWidth(const std::string& text) const {
+  if (text.empty()) {
+    return 0;
+  }
+  if (font_ == nullptr) {
+    return static_cast<int>(text.size()) * 7;
+  }
+
+  int width = 0;
+  int height = 0;
+  if (TTF_SizeUTF8(font_, text.c_str(), &width, &height) != 0) {
+    return static_cast<int>(text.size()) * 7;
+  }
+  return width;
 }
 
 int App::readerLineHeight() const {
@@ -606,53 +695,132 @@ int App::maxReaderScroll() const {
   return std::max(0, static_cast<int>(reader_lines_.size()) - linesPerPage());
 }
 
-bool App::initFrameTexture() {
-  SDL_RendererInfo info = {};
-  if (SDL_GetRendererInfo(renderer_, &info) != 0) {
-    return false;
-  }
-  if ((info.flags & SDL_RENDERER_TARGETTEXTURE) == 0) {
-    return false;
-  }
+void App::prepareRenderResources() {
+  prepareText("glyph", kAccent);
+  prepareText(screenName(screen_), kMuted);
 
-  uint32_t texture_format = SDL_PIXELFORMAT_RGBA8888;
-  if (info.num_texture_formats > 0) {
-    texture_format = info.texture_formats[0];
+  switch (screen_) {
+  case Screen::Browser: {
+    updateSelectedCover();
+    prepareText(books_path_, kMuted);
+    prepareText("No cover", kMuted);
+    prepareText("Cross/Enter open  Circle/Esc back  Start/S settings", kMuted);
+    const int visible_books =
+        std::min(static_cast<int>(books_.size()), std::max(1, (config_.height - 54) / 38 + 1));
+    for (int i = 0; i < visible_books; ++i) {
+      prepareText(books_[static_cast<size_t>(i)].title, i == selected_book_ ? kText : kMuted);
+      prepareText(books_[static_cast<size_t>(i)].subtitle,
+                  books_[static_cast<size_t>(i)].readable ? kMuted : kWarn);
+    }
+    break;
   }
-  frame_texture_ = SDL_CreateTexture(renderer_, texture_format, SDL_TEXTUREACCESS_TARGET,
-                                     config_.width, config_.height);
-  if (frame_texture_ == nullptr) {
-    return false;
+  case Screen::Reader: {
+    const int line_count = linesPerPage();
+    prepareText(reader_title_, kAccent);
+    prepareText(reader_status_, kMuted);
+    for (int i = 0; i < line_count; ++i) {
+      const int line_index = reader_scroll_ + i;
+      if (line_index >= static_cast<int>(reader_lines_.size())) {
+        break;
+      }
+      prepareText(reader_lines_[static_cast<size_t>(line_index)], kText);
+    }
+    const int lines_per_page = linesPerPage();
+    const int total_pages =
+        std::max(1, (static_cast<int>(reader_lines_.size()) + lines_per_page - 1) / lines_per_page);
+    const int current_page = std::min(total_pages, (reader_scroll_ / lines_per_page) + 1);
+    prepareText("L/R scroll, page at edge  D-pad pages", kMuted);
+    prepareText("page " + std::to_string(current_page) + "/" + std::to_string(total_pages), kMuted);
+    break;
   }
-
-  SDL_SetTextureBlendMode(frame_texture_, SDL_BLENDMODE_NONE);
-  if (SDL_SetRenderTarget(renderer_, frame_texture_) != 0) {
-    clearFrameTexture();
-    return false;
+  case Screen::Settings:
+    prepareText("Settings", kAccent);
+    prepareText("Circle/Esc or Start/S closes", kMuted);
+    for (int i = 0; i < static_cast<int>(settings_.size()); ++i) {
+      prepareText(settings_[static_cast<size_t>(i)], i == selected_setting_ ? kText : kMuted);
+    }
+    break;
   }
-
-  SDL_SetRenderTarget(renderer_, nullptr);
-  frame_texture_enabled_ = true;
-  return true;
 }
 
-void App::clearFrameTexture() {
-  frame_texture_enabled_ = false;
-  if (renderer_ != nullptr) {
-    SDL_SetRenderTarget(renderer_, nullptr);
-  }
-  if (frame_texture_ != nullptr) {
-    SDL_DestroyTexture(frame_texture_);
-    frame_texture_ = nullptr;
-  }
+void App::prepareText(const std::string& text, SDL_Color color) {
+  int width = 0;
+  int height = 0;
+  textTextureFor(text, color, width, height);
 }
 
-void App::renderFrame() {
+SDL_Texture* App::textTextureFor(const std::string& text, SDL_Color color, int& width,
+                                 int& height) {
+  width = 0;
+  height = 0;
+  if (font_ == nullptr || text.empty()) {
+    return nullptr;
+  }
+
+  ++text_cache_tick_;
+  for (TextTextureEntry& entry : text_cache_) {
+    if (entry.text == text && sameColor(entry.color, color)) {
+      entry.last_used = text_cache_tick_;
+      width = entry.width;
+      height = entry.height;
+      return entry.texture;
+    }
+  }
+
+  SDL_Surface* surface = TTF_RenderUTF8_Blended(font_, text.c_str(), color);
+  if (surface == nullptr) {
+    return nullptr;
+  }
+
+  SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer_, surface);
+  if (texture == nullptr) {
+    SDL_FreeSurface(surface);
+    return nullptr;
+  }
+  SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+
+  while (text_cache_.size() >= kTextTextureCacheLimit) {
+    auto oldest = text_cache_.begin();
+    for (auto it = text_cache_.begin(); it != text_cache_.end(); ++it) {
+      if (it->last_used < oldest->last_used) {
+        oldest = it;
+      }
+    }
+    SDL_DestroyTexture(oldest->texture);
+    text_cache_.erase(oldest);
+  }
+
+  TextTextureEntry entry;
+  entry.text = text;
+  entry.color = color;
+  entry.texture = texture;
+  entry.width = surface->w;
+  entry.height = surface->h;
+  entry.last_used = text_cache_tick_;
+  width = entry.width;
+  height = entry.height;
+  SDL_FreeSurface(surface);
+  text_cache_.push_back(entry);
+  return text_cache_.back().texture;
+}
+
+void App::clearTextCache() {
+  for (TextTextureEntry& entry : text_cache_) {
+    if (entry.texture != nullptr) {
+      SDL_DestroyTexture(entry.texture);
+      entry.texture = nullptr;
+    }
+  }
+  text_cache_.clear();
+}
+
+void App::render() {
+  prepareRenderResources();
+
   SDL_RenderSetClipRect(renderer_, nullptr);
   SDL_RenderSetViewport(renderer_, nullptr);
   SDL_SetRenderDrawColor(renderer_, kBg.r, kBg.g, kBg.b, kBg.a);
   SDL_RenderClear(renderer_);
-  fillRect(0, 0, config_.width, config_.height, kBg);
 
   fillRect(0, 0, config_.width, 24, kPanel);
   drawText("glyph", 8, 5, kAccent);
@@ -668,23 +836,6 @@ void App::renderFrame() {
   case Screen::Settings:
     renderSettings();
     break;
-  }
-}
-
-void App::render() {
-  if (frame_texture_enabled_ && frame_texture_ != nullptr) {
-    if (SDL_SetRenderTarget(renderer_, frame_texture_) == 0) {
-      renderFrame();
-      SDL_SetRenderTarget(renderer_, nullptr);
-      SDL_RenderSetClipRect(renderer_, nullptr);
-      SDL_RenderSetViewport(renderer_, nullptr);
-      SDL_RenderCopy(renderer_, frame_texture_, nullptr, nullptr);
-    } else {
-      clearFrameTexture();
-      renderFrame();
-    }
-  } else {
-    renderFrame();
   }
 
 #if defined(GLYPH_PLATFORM_PSP)
@@ -754,7 +905,7 @@ void App::renderReader() {
   const int footer_top = config_.height - kReaderFooterHeight;
   fillRect(0, footer_top, config_.width, kReaderFooterHeight, kPanel);
   fillRect(0, footer_top, config_.width, 1, kPanelHi);
-  drawText("L/Q up/prev  R/E down/next  D-pad pages", 12, config_.height - 20, kMuted);
+  drawText("L/R scroll, page at edge  D-pad pages", 12, config_.height - 20, kMuted);
   drawTextRight("page " + std::to_string(current_page) + "/" + std::to_string(total_pages),
                 config_.width - 14, config_.height - 20, kMuted);
 }
@@ -776,38 +927,27 @@ void App::renderSettings() {
 }
 
 void App::drawText(const std::string& text, int x, int y, SDL_Color color) {
-  if (font_ == nullptr || text.empty()) {
-    return;
-  }
-
-  SDL_Surface* surface = TTF_RenderUTF8_Blended(font_, text.c_str(), color);
-  if (surface == nullptr) {
-    return;
-  }
-
-  SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer_, surface);
+  int width = 0;
+  int height = 0;
+  SDL_Texture* texture = textTextureFor(text, color, width, height);
   if (texture == nullptr) {
-    SDL_FreeSurface(surface);
     return;
   }
 
-  SDL_Rect dst = {x, y, surface->w, surface->h};
-  SDL_FreeSurface(surface);
+  SDL_Rect dst = {x, y, width, height};
   SDL_RenderCopy(renderer_, texture, nullptr, &dst);
-  SDL_DestroyTexture(texture);
 }
 
 void App::drawTextRight(const std::string& text, int right_x, int y, SDL_Color color) {
-  if (font_ == nullptr || text.empty()) {
+  int width = 0;
+  int height = 0;
+  SDL_Texture* texture = textTextureFor(text, color, width, height);
+  if (texture == nullptr) {
     return;
   }
 
-  int w = 0;
-  int h = 0;
-  if (TTF_SizeUTF8(font_, text.c_str(), &w, &h) != 0) {
-    return;
-  }
-  drawText(text, right_x - w, y, color);
+  SDL_Rect dst = {right_x - width, y, width, height};
+  SDL_RenderCopy(renderer_, texture, nullptr, &dst);
 }
 
 void App::fillRect(int x, int y, int w, int h, SDL_Color color) {
