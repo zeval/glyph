@@ -387,9 +387,9 @@ void App::openBookPath(const std::string& path) {
     return;
   }
 
-  EpubTextResult text = document.readSpineText(0);
+  EpubTextResult text = document.readFirstReadableSpineText();
   if (!text.ok) {
-    setReaderText(document.book().metadata.title, "Could not read first chapter", text.error);
+    setReaderText(document.book().metadata.title, "Could not read EPUB text", text.error);
     screen_ = Screen::Reader;
     return;
   }

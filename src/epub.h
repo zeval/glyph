@@ -43,6 +43,7 @@ struct EpubTextResult {
   bool ok = false;
   std::string error;
   std::string text;
+  size_t spine_index = 0;
 };
 
 class EpubDocument {
@@ -52,6 +53,7 @@ public:
   const std::string& error() const;
   const EpubBook& book() const;
   EpubTextResult readSpineText(size_t spine_index) const;
+  EpubTextResult readFirstReadableSpineText() const;
 
 private:
   ZipArchive archive_;

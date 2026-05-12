@@ -479,6 +479,7 @@ const EpubBook& EpubDocument::book() const {
 
 EpubTextResult EpubDocument::readSpineText(size_t spine_index) const {
   EpubTextResult result;
+  result.spine_index = spine_index;
   if (spine_index >= book_.spine.size()) {
     result.error = "spine index is out of range";
     return result;
@@ -502,6 +503,23 @@ EpubTextResult EpubDocument::readSpineText(size_t spine_index) const {
   if (!result.ok) {
     result.error = "spine item did not contain readable text: " + spine.href;
   }
+  return result;
+}
+
+EpubTextResult EpubDocument::readFirstReadableSpineText() const {
+  EpubTextResult last_result;
+  for (size_t i = 0; i < book_.spine.size(); ++i) {
+    EpubTextResult result = readSpineText(i);
+    if (result.ok) {
+      return result;
+    }
+    last_result = result;
+  }
+
+  EpubTextResult result;
+  result.error = last_result.error.empty()
+                     ? "EPUB spine did not contain readable text"
+                     : "EPUB spine did not contain readable text; last error: " + last_result.error;
   return result;
 }
 

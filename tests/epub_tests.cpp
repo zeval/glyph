@@ -133,6 +133,42 @@ bool writeTinyEpub(const std::string& path) {
       });
 }
 
+bool writeEpubWithEmptyTitlePage(const std::string& path) {
+  return writeStoredZip(
+      path,
+      {
+          {"mimetype", "application/epub+zip"},
+          {"META-INF/container.xml",
+           "<?xml version=\"1.0\"?>"
+           "<container version=\"1.0\" xmlns=\"urn:oasis:names:tc:opendocument:xmlns:container\">"
+           "<rootfiles><rootfile full-path=\"OPS/package.opf\" "
+           "media-type=\"application/oebps-package+xml\"/></rootfiles></container>"},
+          {"OPS/package.opf",
+           "<?xml version=\"1.0\"?>"
+           "<package version=\"2.0\" xmlns=\"http://www.idpf.org/2007/opf\">"
+           "<metadata xmlns:dc=\"http://purl.org/dc/elements/1.1/\">"
+           "<dc:title>Book With Title Page</dc:title>"
+           "<dc:creator>Ada Reader</dc:creator>"
+           "<dc:language>en</dc:language>"
+           "<dc:identifier>titlepage-id</dc:identifier>"
+           "</metadata>"
+           "<manifest>"
+           "<item id=\"title\" href=\"titlepage.xhtml\" media-type=\"application/xhtml+xml\"/>"
+           "<item id=\"chap1\" href=\"chapter1.xhtml\" media-type=\"application/xhtml+xml\"/>"
+           "</manifest>"
+           "<spine><itemref idref=\"title\"/><itemref idref=\"chap1\"/></spine>"
+           "</package>"},
+          {"OPS/titlepage.xhtml",
+           "<?xml version=\"1.0\"?>"
+           "<html xmlns=\"http://www.w3.org/1999/xhtml\"><head><title>Title</title></head>"
+           "<body><img src=\"cover.jpg\" alt=\"cover\"/></body></html>"},
+          {"OPS/chapter1.xhtml",
+           "<?xml version=\"1.0\"?>"
+           "<html xmlns=\"http://www.w3.org/1999/xhtml\"><head><title>Chapter</title></head>"
+           "<body><h1>Chapter One</h1><p>Readable chapter text.</p></body></html>"},
+      });
+}
+
 } // namespace
 
 TEST_CASE("xhtml extraction keeps readable text") {
@@ -180,6 +216,26 @@ TEST_CASE("epub document loads metadata, spine, and chapter text") {
   REQUIRE(chapter.text.find("Chapter One") != std::string::npos);
   REQUIRE(chapter.text.find("Hello reader.") != std::string::npos);
   REQUIRE(chapter.text.find("Second paragraph & more text.") != std::string::npos);
+
+  std::remove(path.c_str());
+}
+
+TEST_CASE("epub document skips empty title page spine items") {
+  const std::string path = tempEpubPath();
+  REQUIRE(writeEpubWithEmptyTitlePage(path));
+
+  glyph::EpubDocument document;
+  REQUIRE(document.open(path));
+  REQUIRE(document.book().spine.size() == 2);
+
+  const glyph::EpubTextResult title_page = document.readSpineText(0);
+  REQUIRE_FALSE(title_page.ok);
+
+  const glyph::EpubTextResult chapter = document.readFirstReadableSpineText();
+  REQUIRE(chapter.ok);
+  CHECK(chapter.spine_index == 1);
+  CHECK(chapter.text.find("Chapter One") != std::string::npos);
+  CHECK(chapter.text.find("Readable chapter text.") != std::string::npos);
 
   std::remove(path.c_str());
 }
