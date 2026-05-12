@@ -26,8 +26,6 @@ constexpr SDL_Color kMuted = {148, 156, 160, 255};
 constexpr SDL_Color kAccent = {98, 164, 168, 255};
 constexpr SDL_Color kWarn = {204, 166, 92, 255};
 
-constexpr uint32_t kHoldThresholdMs = 320;
-constexpr uint32_t kScrollRepeatMs = 90;
 constexpr int kReaderFrameX = 8;
 constexpr int kReaderFrameY = 32;
 constexpr int kReaderTextX = 14;
@@ -71,7 +69,7 @@ App::App(AppConfig config) : config_(config) {
   settings_ = {
       "Theme: dark",
       "Font: Atkinson",
-      "Reader mode: page + scroll",
+      "Bumpers: step + page",
       std::string("Storage: ") + defaultStorageRootPath(),
   };
 
@@ -268,33 +266,17 @@ void App::pollPlatformInput(InputState& input) {
   input.toc = input.toc || ((pressed & PSP_CTRL_TRIANGLE) != 0);
   input.bookmark = input.bookmark || ((pressed & PSP_CTRL_SQUARE) != 0);
   input.status = input.status || ((pressed & PSP_CTRL_SELECT) != 0);
-  const bool current_l = (buttons & PSP_CTRL_LTRIGGER) != 0;
-  const bool current_r = (buttons & PSP_CTRL_RTRIGGER) != 0;
   input.shoulder_l_click = input.shoulder_l_click || ((pressed & PSP_CTRL_LTRIGGER) != 0);
   input.shoulder_r_click = input.shoulder_r_click || ((pressed & PSP_CTRL_RTRIGGER) != 0);
-  input.shoulder_l_down = input.shoulder_l_down || current_l;
-  input.shoulder_r_down = input.shoulder_r_down || current_r;
   previous_platform_buttons_ = buttons;
 #else
-  const uint8_t* keys = SDL_GetKeyboardState(nullptr);
-  input.shoulder_l_down =
-      input.shoulder_l_down || keys[SDL_SCANCODE_Q] || keys[SDL_SCANCODE_PAGEUP];
-  input.shoulder_r_down =
-      input.shoulder_r_down || keys[SDL_SCANCODE_E] || keys[SDL_SCANCODE_PAGEDOWN];
+  (void)input;
 #endif
 }
 
 void App::applyInput(const InputState& input) {
   if (input.quit) {
     running_ = false;
-  }
-
-  if (screen_ == Screen::Reader) {
-    const uint32_t now_ms = SDL_GetTicks();
-    updateShoulderHold(input.shoulder_l_down, input.shoulder_r_down, now_ms);
-  } else {
-    left_hold_started_ms_ = 0;
-    right_hold_started_ms_ = 0;
   }
 
   if (input.menu) {
@@ -322,11 +304,17 @@ void App::applyInput(const InputState& input) {
     break;
 
   case Screen::Reader:
-    if (input.right || input.shoulder_r_click) {
-      reader_scroll_ = std::min(maxReaderScroll(), reader_scroll_ + linesPerPage());
+    if (input.right) {
+      pageReaderForward();
     }
-    if (input.left || input.shoulder_l_click) {
-      reader_scroll_ = std::max(0, reader_scroll_ - linesPerPage());
+    if (input.left) {
+      pageReaderBackward();
+    }
+    if (input.shoulder_r_click) {
+      stepOrPageReaderForward();
+    }
+    if (input.shoulder_l_click) {
+      stepOrPageReaderBackward();
     }
     if (input.down) {
       reader_scroll_ = std::min(maxReaderScroll(), reader_scroll_ + 1);
@@ -354,32 +342,43 @@ void App::applyInput(const InputState& input) {
   }
 }
 
-void App::updateShoulderHold(bool left_down, bool right_down, uint32_t now_ms) {
-  if (left_down) {
-    if (left_hold_started_ms_ == 0) {
-      left_hold_started_ms_ = now_ms;
-    }
-    if (now_ms - left_hold_started_ms_ >= kHoldThresholdMs &&
-        now_ms - last_scroll_step_ms_ >= kScrollRepeatMs) {
-      reader_scroll_ = std::max(0, reader_scroll_ - 1);
-      last_scroll_step_ms_ = now_ms;
-    }
-  } else {
-    left_hold_started_ms_ = 0;
+void App::pageReaderForward() {
+  reader_scroll_ = std::min(maxReaderScroll(), reader_scroll_ + linesPerPage());
+}
+
+void App::pageReaderBackward() {
+  reader_scroll_ = std::max(0, reader_scroll_ - linesPerPage());
+}
+
+void App::stepOrPageReaderForward() {
+  const int page_lines = linesPerPage();
+  const int max_scroll = maxReaderScroll();
+  if (reader_scroll_ >= max_scroll) {
+    return;
   }
 
-  if (right_down) {
-    if (right_hold_started_ms_ == 0) {
-      right_hold_started_ms_ = now_ms;
-    }
-    if (now_ms - right_hold_started_ms_ >= kHoldThresholdMs &&
-        now_ms - last_scroll_step_ms_ >= kScrollRepeatMs) {
-      reader_scroll_ = std::min(maxReaderScroll(), reader_scroll_ + 1);
-      last_scroll_step_ms_ = now_ms;
-    }
-  } else {
-    right_hold_started_ms_ = 0;
+  const int page_offset = reader_scroll_ % page_lines;
+  if (page_offset + 1 < page_lines) {
+    reader_scroll_ = std::min(max_scroll, reader_scroll_ + 1);
+    return;
   }
+
+  reader_scroll_ = std::min(max_scroll, reader_scroll_ + page_lines - page_offset);
+}
+
+void App::stepOrPageReaderBackward() {
+  if (reader_scroll_ <= 0) {
+    return;
+  }
+
+  const int page_lines = linesPerPage();
+  const int page_offset = reader_scroll_ % page_lines;
+  if (page_offset > 0) {
+    --reader_scroll_;
+    return;
+  }
+
+  pageReaderBackward();
 }
 
 void App::refreshLibrary() {
@@ -690,7 +689,7 @@ void App::renderReader() {
   const int footer_top = config_.height - kReaderFooterHeight;
   fillRect(0, footer_top, config_.width, kReaderFooterHeight, kPanel);
   fillRect(0, footer_top, config_.width, 1, kPanelHi);
-  drawText("L/Q prev  R/E next  hold L/R scroll", 12, config_.height - 20, kMuted);
+  drawText("L/Q up/prev  R/E down/next  D-pad pages", 12, config_.height - 20, kMuted);
   drawTextRight("page " + std::to_string(current_page) + "/" + std::to_string(total_pages),
                 config_.width - 14, config_.height - 20, kMuted);
 }

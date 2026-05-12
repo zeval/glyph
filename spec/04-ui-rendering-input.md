@@ -57,10 +57,9 @@ Elements:
 
 Controls:
 
-- R click: next page.
-- L click: previous page.
-- R hold: scroll down while held.
-- L hold: scroll up while held.
+- R click: scroll down within the current page; jump to next page at the page edge.
+- L click: scroll up within the current page; jump to previous page at the page edge.
+- R/L hold: no action in v1.
 - D-pad right/left: next/previous page.
 - D-pad up/down: scroll line/paragraph in scroll mode.
 - Triangle: table of contents.
@@ -259,7 +258,7 @@ Quit
 
 Map PSP buttons to actions at platform layer. Host build can map keyboard/gamepad to same actions.
 
-Hold detection should use a short threshold, roughly 250-400 ms, so normal L/R clicks still feel crisp. While held, scroll repeats at a stable rate independent of frame rate.
+L/R should be edge-triggered only for v1. Do not add hold-repeat behavior unless the control model is revisited.
 
 ## Sources
 

@@ -15,7 +15,7 @@ Development environments must support the current agent machine, Linux/Ubuntu Se
 - Render readable, paginated text on the PSP's 480x272 display.
 - Support common novel/text EPUBs in v1, while keeping the long-term project goal broad EPUB compatibility.
 - Provide a controller-first reader UX: file browser, table of contents, reading progress, bookmarks, recent books, font size/theme settings.
-- Support PSP Go collapsed reading: L/R alone must be enough for previous/next page and fine scrolling.
+- Support PSP Go collapsed reading: L/R alone must be enough for page-edge jumps and fine scrolling.
 - Keep the code portable enough to run a host build for parser/layout tests.
 
 ## Non-Goals For MVP
@@ -260,10 +260,9 @@ Host build/test harness is approved for first implementation work. The host buil
 
 ## Input Map
 
-- `L` click: previous page.
-- `R` click: next page.
-- `L` hold: scroll up while held.
-- `R` hold: scroll down while held.
+- `L` click: scroll up within the current page; jump to previous page at the page edge.
+- `R` click: scroll down within the current page; jump to next page at the page edge.
+- L/R hold: no action in v1.
 - `D-pad left/right`: previous/next page.
 - `D-pad up/down`: line/paragraph scroll in menus and reader scroll mode.
 - `Analog`: accelerated list scroll.

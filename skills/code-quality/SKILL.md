@@ -30,8 +30,9 @@ description: Keep glyph code clean, portable, and maintainable. Use before editi
 - 480x272 PSP screen is the constraint.
 - Dark default theme.
 - Collapsed PSP Go reading must work with L/R:
-  - click: previous/next page
-  - hold: scroll up/down
+  - click: scroll within the current page
+  - at page edges, click jumps previous/next page
+  - no hold-repeat behavior
 
 ## Tooling
 

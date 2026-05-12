@@ -22,10 +22,9 @@ This file tracks decisions from the initial spec questions. Answered items are r
 6. Reader should support both page-based and scroll-based reading.
 
 7. Collapsed PSP Go reading is a core UX goal.
-   - `L` click: previous page.
-   - `R` click: next page.
-   - `L` hold: scroll up.
-   - `R` hold: scroll down.
+   - `L` click: scroll up within the current page; jump to previous page at the page edge.
+   - `R` click: scroll down within the current page; jump to next page at the page edge.
+   - No L/R hold behavior for v1.
    - D-pad can also page turn.
 
 8. Cross means accept/select. Circle means back.

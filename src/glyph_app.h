@@ -57,15 +57,16 @@ private:
     bool status = false;
     bool shoulder_l_click = false;
     bool shoulder_r_click = false;
-    bool shoulder_l_down = false;
-    bool shoulder_r_down = false;
     bool quit = false;
   };
 
   void handleEvent(const SDL_Event& event, InputState& input);
   void pollPlatformInput(InputState& input);
   void applyInput(const InputState& input);
-  void updateShoulderHold(bool left_down, bool right_down, uint32_t now_ms);
+  void pageReaderForward();
+  void pageReaderBackward();
+  void stepOrPageReaderForward();
+  void stepOrPageReaderBackward();
   void refreshLibrary();
   void openSelectedBook();
   void openBookPath(const std::string& path);
@@ -103,9 +104,6 @@ private:
   int selected_book_ = 0;
   int selected_setting_ = 0;
   int reader_scroll_ = 0;
-  uint32_t left_hold_started_ms_ = 0;
-  uint32_t right_hold_started_ms_ = 0;
-  uint32_t last_scroll_step_ms_ = 0;
   uint32_t previous_platform_buttons_ = 0;
 
   std::vector<BookEntry> books_;
