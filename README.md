@@ -49,7 +49,7 @@ make check-format
 PSP:
 
 ```sh
-make psp
+make package-psp
 make run-ppsspp
 ```
 
@@ -63,6 +63,7 @@ make check-deps
 
 ```text
 ef0:/PSP/GAME/glyph/EBOOT.PBP
+ef0:/PSP/GAME/glyph/assets/fonts/
 ef0:/PSP/GAME/glyph/books/
 ef0:/PSP/GAME/glyph/saves/
 ef0:/PSP/GAME/glyph/cache/

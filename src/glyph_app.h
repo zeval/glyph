@@ -94,8 +94,7 @@ private:
   uint32_t left_hold_started_ms_ = 0;
   uint32_t right_hold_started_ms_ = 0;
   uint32_t last_scroll_step_ms_ = 0;
-  bool previous_platform_l_ = false;
-  bool previous_platform_r_ = false;
+  uint32_t previous_platform_buttons_ = 0;
 
   std::vector<BookEntry> books_;
   std::string books_path_;

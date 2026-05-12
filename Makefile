@@ -2,6 +2,7 @@
 
 BUILD_HOST ?= build/host
 BUILD_PSP ?= build/psp
+PSP_PACKAGE ?= build/package/glyph
 FIXTURE_DIR ?= build/fixtures
 HOST_TARGET ?= glyph
 PSP_TARGET ?= glyph
@@ -25,6 +26,7 @@ help:
 		'  make test           Build host app/tests and run CTest' \
 		'  make fixture-epub   Generate a deterministic tiny EPUB fixture' \
 		'  make psp            Configure and build PSP EBOOT.PBP via psp-cmake' \
+		'  make package-psp    Build PSP install folder with assets and sample book' \
 		'  make sample-book    Generate books/glyph-sample.epub for local smoke tests' \
 		'  make run-ppsspp     Run PPSSPP harness detection or smoke launch' \
 		'  make format         Apply clang-format to source files' \
@@ -79,6 +81,16 @@ run-ppsspp:
 .PHONY: sample-book
 sample-book:
 	$(PYTHON) tools/fixtures/make_tiny_epub.py --output books/glyph-sample.epub --force --check
+
+.PHONY: package-psp
+package-psp: psp sample-book
+	rm -rf "$(PSP_PACKAGE)"
+	mkdir -p "$(PSP_PACKAGE)/assets/fonts" "$(PSP_PACKAGE)/books"
+	cp "$(BUILD_PSP)/EBOOT.PBP" "$(PSP_PACKAGE)/EBOOT.PBP"
+	cp books/glyph-sample.epub "$(PSP_PACKAGE)/books/glyph-sample.epub"
+	cp 'assets/fonts/AtkinsonHyperlegibleNext[wght].ttf' "$(PSP_PACKAGE)/assets/fonts/"
+	cp 'assets/fonts/AtkinsonHyperlegibleNext-Italic[wght].ttf' "$(PSP_PACKAGE)/assets/fonts/"
+	cp assets/fonts/OFL.txt assets/fonts/README.md "$(PSP_PACKAGE)/assets/fonts/"
 
 .PHONY: format
 format:

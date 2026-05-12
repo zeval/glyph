@@ -209,24 +209,26 @@ void App::pollPlatformInput(InputState& input) {
   sceCtrlSetSamplingMode(PSP_CTRL_MODE_ANALOG);
   sceCtrlReadBufferPositive(&pad, 1);
 
-  input.up = input.up || ((pad.Buttons & PSP_CTRL_UP) != 0);
-  input.down = input.down || ((pad.Buttons & PSP_CTRL_DOWN) != 0);
-  input.left = input.left || ((pad.Buttons & PSP_CTRL_LEFT) != 0);
-  input.right = input.right || ((pad.Buttons & PSP_CTRL_RIGHT) != 0);
-  input.accept = input.accept || ((pad.Buttons & PSP_CTRL_CROSS) != 0);
-  input.back = input.back || ((pad.Buttons & PSP_CTRL_CIRCLE) != 0);
-  input.menu = input.menu || ((pad.Buttons & PSP_CTRL_START) != 0);
-  input.toc = input.toc || ((pad.Buttons & PSP_CTRL_TRIANGLE) != 0);
-  input.bookmark = input.bookmark || ((pad.Buttons & PSP_CTRL_SQUARE) != 0);
-  input.status = input.status || ((pad.Buttons & PSP_CTRL_SELECT) != 0);
-  const bool current_l = (pad.Buttons & PSP_CTRL_LTRIGGER) != 0;
-  const bool current_r = (pad.Buttons & PSP_CTRL_RTRIGGER) != 0;
-  input.shoulder_l_click = input.shoulder_l_click || (current_l && !previous_platform_l_);
-  input.shoulder_r_click = input.shoulder_r_click || (current_r && !previous_platform_r_);
+  const uint32_t buttons = pad.Buttons;
+  const uint32_t pressed = buttons & ~previous_platform_buttons_;
+
+  input.up = input.up || ((pressed & PSP_CTRL_UP) != 0);
+  input.down = input.down || ((pressed & PSP_CTRL_DOWN) != 0);
+  input.left = input.left || ((pressed & PSP_CTRL_LEFT) != 0);
+  input.right = input.right || ((pressed & PSP_CTRL_RIGHT) != 0);
+  input.accept = input.accept || ((pressed & PSP_CTRL_CROSS) != 0);
+  input.back = input.back || ((pressed & PSP_CTRL_CIRCLE) != 0);
+  input.menu = input.menu || ((pressed & PSP_CTRL_START) != 0);
+  input.toc = input.toc || ((pressed & PSP_CTRL_TRIANGLE) != 0);
+  input.bookmark = input.bookmark || ((pressed & PSP_CTRL_SQUARE) != 0);
+  input.status = input.status || ((pressed & PSP_CTRL_SELECT) != 0);
+  const bool current_l = (buttons & PSP_CTRL_LTRIGGER) != 0;
+  const bool current_r = (buttons & PSP_CTRL_RTRIGGER) != 0;
+  input.shoulder_l_click = input.shoulder_l_click || ((pressed & PSP_CTRL_LTRIGGER) != 0);
+  input.shoulder_r_click = input.shoulder_r_click || ((pressed & PSP_CTRL_RTRIGGER) != 0);
   input.shoulder_l_down = input.shoulder_l_down || current_l;
   input.shoulder_r_down = input.shoulder_r_down || current_r;
-  previous_platform_l_ = current_l;
-  previous_platform_r_ = current_r;
+  previous_platform_buttons_ = buttons;
 #else
   const uint8_t* keys = SDL_GetKeyboardState(nullptr);
   input.shoulder_l_down =
@@ -590,6 +592,8 @@ void App::strokeRect(int x, int y, int w, int h, SDL_Color color) {
 
 bool App::loadFont() {
   const char* candidates[] = {
+      "ef0:/PSP/GAME/glyph/assets/fonts/AtkinsonHyperlegibleNext[wght].ttf",
+      "ms0:/PSP/GAME/glyph/assets/fonts/AtkinsonHyperlegibleNext[wght].ttf",
       "assets/fonts/AtkinsonHyperlegibleNext[wght].ttf",
       "assets/fonts/AtkinsonHyperlegibleNext-Regular.ttf",
       "assets/fonts/AtkinsonHyperlegible-Regular.ttf",
