@@ -80,7 +80,10 @@ private:
   int readerTextHeight() const;
   int linesPerPage() const;
   int maxReaderScroll() const;
+  bool initFrameTexture();
+  void clearFrameTexture();
   void render();
+  void renderFrame();
   void renderBrowser();
   void renderReader();
   void renderSettings();
@@ -95,9 +98,11 @@ private:
   SDL_Renderer* renderer_ = nullptr;
   TTF_Font* font_ = nullptr;
   SDL_Texture* cover_texture_ = nullptr;
+  SDL_Texture* frame_texture_ = nullptr;
   int cover_texture_book_ = -1;
   int cover_texture_width_ = 0;
   int cover_texture_height_ = 0;
+  bool frame_texture_enabled_ = false;
   bool running_ = false;
   bool needs_render_ = true;
   Screen screen_ = Screen::Browser;

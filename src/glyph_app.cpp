@@ -115,10 +115,15 @@ bool App::init() {
   }
 
 #if defined(GLYPH_PLATFORM_PSP)
-  renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_SOFTWARE);
+  renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_SOFTWARE | SDL_RENDERER_TARGETTEXTURE);
 #else
-  renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+  renderer_ = SDL_CreateRenderer(window_, -1,
+                                 SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC |
+                                     SDL_RENDERER_TARGETTEXTURE);
 #endif
+  if (renderer_ == nullptr) {
+    renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_SOFTWARE | SDL_RENDERER_TARGETTEXTURE);
+  }
   if (renderer_ == nullptr) {
     renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_SOFTWARE);
   }
@@ -129,6 +134,7 @@ bool App::init() {
 
   SDL_RenderSetLogicalSize(renderer_, config_.width, config_.height);
   SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_BLEND);
+  initFrameTexture();
   loadFont();
   running_ = true;
   needs_render_ = true;
@@ -173,6 +179,7 @@ int App::run() {
 }
 
 void App::shutdown() {
+  clearFrameTexture();
   clearCoverTexture();
   if (font_ != nullptr) {
     TTF_CloseFont(font_);
@@ -599,7 +606,48 @@ int App::maxReaderScroll() const {
   return std::max(0, static_cast<int>(reader_lines_.size()) - linesPerPage());
 }
 
-void App::render() {
+bool App::initFrameTexture() {
+  SDL_RendererInfo info = {};
+  if (SDL_GetRendererInfo(renderer_, &info) != 0) {
+    return false;
+  }
+  if ((info.flags & SDL_RENDERER_TARGETTEXTURE) == 0) {
+    return false;
+  }
+
+  uint32_t texture_format = SDL_PIXELFORMAT_RGBA8888;
+  if (info.num_texture_formats > 0) {
+    texture_format = info.texture_formats[0];
+  }
+  frame_texture_ = SDL_CreateTexture(renderer_, texture_format, SDL_TEXTUREACCESS_TARGET,
+                                     config_.width, config_.height);
+  if (frame_texture_ == nullptr) {
+    return false;
+  }
+
+  SDL_SetTextureBlendMode(frame_texture_, SDL_BLENDMODE_NONE);
+  if (SDL_SetRenderTarget(renderer_, frame_texture_) != 0) {
+    clearFrameTexture();
+    return false;
+  }
+
+  SDL_SetRenderTarget(renderer_, nullptr);
+  frame_texture_enabled_ = true;
+  return true;
+}
+
+void App::clearFrameTexture() {
+  frame_texture_enabled_ = false;
+  if (renderer_ != nullptr) {
+    SDL_SetRenderTarget(renderer_, nullptr);
+  }
+  if (frame_texture_ != nullptr) {
+    SDL_DestroyTexture(frame_texture_);
+    frame_texture_ = nullptr;
+  }
+}
+
+void App::renderFrame() {
   SDL_RenderSetClipRect(renderer_, nullptr);
   SDL_RenderSetViewport(renderer_, nullptr);
   SDL_SetRenderDrawColor(renderer_, kBg.r, kBg.g, kBg.b, kBg.a);
@@ -620,6 +668,23 @@ void App::render() {
   case Screen::Settings:
     renderSettings();
     break;
+  }
+}
+
+void App::render() {
+  if (frame_texture_enabled_ && frame_texture_ != nullptr) {
+    if (SDL_SetRenderTarget(renderer_, frame_texture_) == 0) {
+      renderFrame();
+      SDL_SetRenderTarget(renderer_, nullptr);
+      SDL_RenderSetClipRect(renderer_, nullptr);
+      SDL_RenderSetViewport(renderer_, nullptr);
+      SDL_RenderCopy(renderer_, frame_texture_, nullptr, nullptr);
+    } else {
+      clearFrameTexture();
+      renderFrame();
+    }
+  } else {
+    renderFrame();
   }
 
 #if defined(GLYPH_PLATFORM_PSP)
