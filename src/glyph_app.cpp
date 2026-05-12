@@ -131,7 +131,7 @@ App::App(AppConfig config) : config_(config) {
   settings_ = {
       "Theme: dark",
       "Font: Atkinson",
-      "Bumpers: scroll + edge page",
+      "Bumpers: half-page + edge page",
       "D-pad: page/line navigation",
       "Circle: save progress and return",
       std::string("Storage: ") + defaultStorageRootPath(),
@@ -453,14 +453,15 @@ void App::pageReaderBackward() {
 
 void App::stepOrPageReaderForward() {
   const int page_lines = linesPerPage();
+  const int scroll_step = readerScrollStep();
   const int max_scroll = maxReaderScroll();
   if (reader_scroll_ >= max_scroll) {
     return;
   }
 
   const int page_offset = reader_scroll_ % page_lines;
-  if (page_offset + 1 < page_lines) {
-    reader_scroll_ = std::min(max_scroll, reader_scroll_ + 1);
+  if (page_offset + scroll_step < page_lines) {
+    reader_scroll_ = std::min(max_scroll, reader_scroll_ + scroll_step);
     return;
   }
 
@@ -473,9 +474,10 @@ void App::stepOrPageReaderBackward() {
   }
 
   const int page_lines = linesPerPage();
+  const int scroll_step = readerScrollStep();
   const int page_offset = reader_scroll_ % page_lines;
   if (page_offset > 0) {
-    --reader_scroll_;
+    reader_scroll_ -= std::min(page_offset, scroll_step);
     return;
   }
 
@@ -693,16 +695,16 @@ std::vector<std::string> App::wrapReaderText(const std::string& text) const {
   layout_config.margin_top = 0;
   layout_config.margin_right = 0;
   layout_config.margin_bottom = 0;
-  layout_config.average_char_width = 6;
+  layout_config.average_char_width = 8;
 
   if (font_ != nullptr) {
     int sample_width = 0;
     int sample_height = 0;
-    const char sample[] = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz     ";
+    const char sample[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     if (TTF_SizeUTF8(font_, sample, &sample_width, &sample_height) == 0) {
       const int sample_chars = static_cast<int>(sizeof(sample) - 1);
       layout_config.average_char_width =
-          std::max(5, std::min(7, sample_width / std::max(1, sample_chars)));
+          std::max(7, std::min(8, sample_width / std::max(1, sample_chars)));
     }
   }
   layout_config.line_height = readerLineHeight();
@@ -743,6 +745,10 @@ int App::readerTextHeight() const {
 
 int App::linesPerPage() const {
   return std::max(1, readerTextHeight() / readerLineHeight());
+}
+
+int App::readerScrollStep() const {
+  return std::max(2, linesPerPage() / 2);
 }
 
 int App::maxReaderScroll() const {

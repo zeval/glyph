@@ -106,6 +106,7 @@ private:
   int readerTextWidth() const;
   int readerTextHeight() const;
   int linesPerPage() const;
+  int readerScrollStep() const;
   int maxReaderScroll() const;
   void prepareRenderResources();
   void prepareText(const std::string& text, SDL_Color color);

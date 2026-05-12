@@ -64,11 +64,11 @@ Current direction:
 
 Controls:
 
-- R click: scroll down within the current page; jump to next page at the page edge.
-- L click: scroll up within the current page; jump to previous page at the page edge.
+- R click: scroll down by a coarse chunk within the current page; jump to next page at the page edge.
+- L click: scroll up by a coarse chunk within the current page; jump to previous page at the page edge.
 - R/L hold: no action in v1.
 - D-pad right/left: next/previous page.
-- D-pad up/down: scroll line/paragraph in scroll mode.
+- D-pad up/down: fine line scroll.
 - Triangle: table of contents.
 - Square: bookmark toggle.
 - Start: reader menu/settings.
