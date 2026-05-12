@@ -27,6 +27,11 @@ constexpr SDL_Color kWarn = {204, 166, 92, 255};
 
 constexpr uint32_t kHoldThresholdMs = 320;
 constexpr uint32_t kScrollRepeatMs = 90;
+#if defined(GLYPH_PLATFORM_PSP)
+constexpr int kUiFontSize = 15;
+#else
+constexpr int kUiFontSize = 14;
+#endif
 
 const char* screenName(Screen screen) {
   switch (screen) {
@@ -421,6 +426,13 @@ std::vector<std::string> App::wrapReaderText(const std::string& text) const {
   layout_config.margin_right = 0;
   layout_config.margin_bottom = 0;
   layout_config.average_char_width = 7;
+  if (font_ != nullptr) {
+    int sample_width = 0;
+    int sample_height = 0;
+    if (TTF_SizeUTF8(font_, "abcdefghijklmnopqrstuvwxyz", &sample_width, &sample_height) == 0) {
+      layout_config.average_char_width = std::max(1, (sample_width + 25) / 26);
+    }
+  }
   layout_config.line_height = font_ != nullptr ? std::max(12, TTF_FontLineSkip(font_)) : 17;
   layout_config.paragraph_spacing = layout_config.line_height / 2;
   layout_config.blank_line_height = layout_config.line_height;
@@ -592,10 +604,12 @@ void App::strokeRect(int x, int y, int w, int h, SDL_Color color) {
 
 bool App::loadFont() {
   const char* candidates[] = {
+      "ef0:/PSP/GAME/glyph/assets/fonts/AtkinsonHyperlegibleNext-Regular.ttf",
+      "ms0:/PSP/GAME/glyph/assets/fonts/AtkinsonHyperlegibleNext-Regular.ttf",
       "ef0:/PSP/GAME/glyph/assets/fonts/AtkinsonHyperlegibleNext[wght].ttf",
       "ms0:/PSP/GAME/glyph/assets/fonts/AtkinsonHyperlegibleNext[wght].ttf",
-      "assets/fonts/AtkinsonHyperlegibleNext[wght].ttf",
       "assets/fonts/AtkinsonHyperlegibleNext-Regular.ttf",
+      "assets/fonts/AtkinsonHyperlegibleNext[wght].ttf",
       "assets/fonts/AtkinsonHyperlegible-Regular.ttf",
       "assets/fonts/Atkinson-Hyperlegible-Regular-102.ttf",
       "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
@@ -604,8 +618,9 @@ bool App::loadFont() {
   };
 
   for (const char* path : candidates) {
-    font_ = TTF_OpenFont(path, 14);
+    font_ = TTF_OpenFont(path, kUiFontSize);
     if (font_ != nullptr) {
+      TTF_SetFontHinting(font_, TTF_HINTING_NORMAL);
       return true;
     }
   }
