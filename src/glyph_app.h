@@ -84,8 +84,6 @@ private:
   void updateSelectedCover();
   void drawCoverPreview(int x, int y, int w, int h);
   std::vector<std::string> wrapReaderText(const std::string& text) const;
-  void appendWrappedParagraph(const std::string& paragraph, std::vector<std::string>& lines) const;
-  int measureTextWidth(const std::string& text) const;
   int readerLineHeight() const;
   int readerTextWidth() const;
   int readerTextHeight() const;

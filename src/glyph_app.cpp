@@ -2,6 +2,7 @@
 
 #include "epub.h"
 #include "library.h"
+#include "text_layout.h"
 
 #include <SDL_image.h>
 
@@ -65,29 +66,6 @@ std::string authorsLine(const std::vector<std::string>& authors) {
 
 bool sameColor(SDL_Color a, SDL_Color b) {
   return a.r == b.r && a.g == b.g && a.b == b.b && a.a == b.a;
-}
-
-bool isInlineSpace(char ch) {
-  return ch == ' ' || ch == '\t' || ch == '\f' || ch == '\v';
-}
-
-size_t utf8CharBytes(const std::string& text, size_t offset) {
-  if (offset >= text.size()) {
-    return 0;
-  }
-
-  const auto first = static_cast<unsigned char>(text[offset]);
-  size_t count = 1;
-  if ((first & 0x80u) == 0u) {
-    count = 1;
-  } else if ((first & 0xE0u) == 0xC0u) {
-    count = 2;
-  } else if ((first & 0xF0u) == 0xE0u) {
-    count = 3;
-  } else if ((first & 0xF8u) == 0xF0u) {
-    count = 4;
-  }
-  return std::min(count, text.size() - offset);
 }
 
 } // namespace
@@ -565,109 +543,47 @@ void App::drawCoverPreview(int x, int y, int w, int h) {
 
 std::vector<std::string> App::wrapReaderText(const std::string& text) const {
   std::vector<std::string> lines;
-  std::string paragraph;
-  bool pending_space = false;
 
-  for (size_t i = 0; i < text.size(); ++i) {
-    const char ch = text[i];
-    if (ch == '\r' || ch == '\n') {
-      if (ch == '\r' && i + 1 < text.size() && text[i + 1] == '\n') {
-        ++i;
+  TextLayoutConfig layout_config;
+  layout_config.viewport_width = readerTextWidth();
+  layout_config.viewport_height = 100000;
+  layout_config.margin_left = 0;
+  layout_config.margin_top = 0;
+  layout_config.margin_right = 0;
+  layout_config.margin_bottom = 0;
+  layout_config.average_char_width = 6;
+
+  if (font_ != nullptr) {
+    int sample_width = 0;
+    int sample_height = 0;
+    const char sample[] = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz     ";
+    if (TTF_SizeUTF8(font_, sample, &sample_width, &sample_height) == 0) {
+      const int sample_chars = static_cast<int>(sizeof(sample) - 1);
+      layout_config.average_char_width =
+          std::max(5, std::min(7, sample_width / std::max(1, sample_chars)));
+    }
+  }
+  layout_config.line_height = readerLineHeight();
+  layout_config.paragraph_spacing = layout_config.line_height / 2;
+  layout_config.blank_line_height = layout_config.line_height;
+
+  const TextLayout layout = paginatePlainText(text, layout_config);
+  for (const TextLayoutPage& page : layout.pages) {
+    int next_y = 0;
+    for (const TextLayoutLine& line : page.lines) {
+      while (line.y - next_y >= layout_config.line_height) {
+        lines.emplace_back();
+        next_y += layout_config.line_height;
       }
-      appendWrappedParagraph(paragraph, lines);
-      paragraph.clear();
-      pending_space = false;
-      continue;
+      lines.push_back(line.text);
+      next_y = line.y + layout_config.line_height;
     }
-
-    if (isInlineSpace(ch)) {
-      pending_space = !paragraph.empty();
-      continue;
-    }
-
-    if (pending_space) {
-      paragraph.push_back(' ');
-      pending_space = false;
-    }
-    paragraph.push_back(ch);
   }
 
-  appendWrappedParagraph(paragraph, lines);
   while (!lines.empty() && lines.back().empty()) {
     lines.pop_back();
   }
   return lines;
-}
-
-void App::appendWrappedParagraph(const std::string& paragraph,
-                                 std::vector<std::string>& lines) const {
-  if (paragraph.empty()) {
-    lines.emplace_back();
-    return;
-  }
-
-  const int max_width = readerTextWidth();
-  std::string line;
-  size_t word_start = 0;
-  while (word_start < paragraph.size()) {
-    size_t word_end = paragraph.find(' ', word_start);
-    if (word_end == std::string::npos) {
-      word_end = paragraph.size();
-    }
-
-    const std::string word = paragraph.substr(word_start, word_end - word_start);
-    const std::string candidate = line.empty() ? word : line + " " + word;
-    if (measureTextWidth(candidate) <= max_width) {
-      line = candidate;
-    } else {
-      if (!line.empty()) {
-        lines.push_back(line);
-        line.clear();
-      }
-
-      if (measureTextWidth(word) <= max_width) {
-        line = word;
-      } else {
-        std::string chunk;
-        size_t offset = 0;
-        while (offset < word.size()) {
-          const size_t char_bytes = utf8CharBytes(word, offset);
-          const std::string next = word.substr(offset, char_bytes);
-          const std::string next_chunk = chunk + next;
-          if (!chunk.empty() && measureTextWidth(next_chunk) > max_width) {
-            lines.push_back(chunk);
-            chunk = next;
-          } else {
-            chunk = next_chunk;
-          }
-          offset += char_bytes;
-        }
-        line = chunk;
-      }
-    }
-
-    word_start = word_end + 1;
-  }
-
-  if (!line.empty()) {
-    lines.push_back(line);
-  }
-}
-
-int App::measureTextWidth(const std::string& text) const {
-  if (text.empty()) {
-    return 0;
-  }
-  if (font_ == nullptr) {
-    return static_cast<int>(text.size()) * 7;
-  }
-
-  int width = 0;
-  int height = 0;
-  if (TTF_SizeUTF8(font_, text.c_str(), &width, &height) != 0) {
-    return static_cast<int>(text.size()) * 7;
-  }
-  return width;
 }
 
 int App::readerLineHeight() const {
