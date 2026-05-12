@@ -203,6 +203,39 @@ bool writeEpubWithMultipleReadableSpineItems(const std::string& path) {
       });
 }
 
+bool writeEpubWithCoverImage(const std::string& path) {
+  return writeStoredZip(
+      path,
+      {
+          {"mimetype", "application/epub+zip"},
+          {"META-INF/container.xml",
+           "<?xml version=\"1.0\"?>"
+           "<container version=\"1.0\" xmlns=\"urn:oasis:names:tc:opendocument:xmlns:container\">"
+           "<rootfiles><rootfile full-path=\"OPS/package.opf\" "
+           "media-type=\"application/oebps-package+xml\"/></rootfiles></container>"},
+          {"OPS/package.opf",
+           "<?xml version=\"1.0\"?>"
+           "<package version=\"2.0\" xmlns=\"http://www.idpf.org/2007/opf\">"
+           "<metadata xmlns:dc=\"http://purl.org/dc/elements/1.1/\">"
+           "<dc:title>Covered Book</dc:title>"
+           "<dc:creator>Ada Reader</dc:creator>"
+           "<dc:language>en</dc:language>"
+           "<dc:identifier>cover-id</dc:identifier>"
+           "<meta name=\"cover\" content=\"cover-image\"/>"
+           "</metadata>"
+           "<manifest>"
+           "<item id=\"cover-image\" href=\"images/cover.jpg\" media-type=\"image/jpeg\"/>"
+           "<item id=\"chap1\" href=\"chapter1.xhtml\" media-type=\"application/xhtml+xml\"/>"
+           "</manifest>"
+           "<spine><itemref idref=\"chap1\"/></spine>"
+           "</package>"},
+          {"OPS/images/cover.jpg", "fake-jpeg"},
+          {"OPS/chapter1.xhtml", "<?xml version=\"1.0\"?>"
+                                 "<html xmlns=\"http://www.w3.org/1999/xhtml\"><body>"
+                                 "<h1>Chapter One</h1><p>Readable chapter text.</p></body></html>"},
+      });
+}
+
 } // namespace
 
 TEST_CASE("xhtml extraction keeps readable text") {
@@ -288,6 +321,21 @@ TEST_CASE("epub document combines readable spine items") {
   CHECK(book_text.text.find("First chapter text.") != std::string::npos);
   CHECK(book_text.text.find("Chapter Two") != std::string::npos);
   CHECK(book_text.text.find("Second chapter text.") != std::string::npos);
+
+  std::remove(path.c_str());
+}
+
+TEST_CASE("epub document resolves cover image resources") {
+  const std::string path = tempEpubPath();
+  REQUIRE(writeEpubWithCoverImage(path));
+
+  glyph::EpubDocument document;
+  REQUIRE(document.open(path));
+  REQUIRE(document.book().cover_image_path == "OPS/images/cover.jpg");
+
+  const glyph::ZipReadResult cover = document.readResource(document.book().cover_image_path);
+  REQUIRE(cover.ok);
+  CHECK(glyph::bytesToString(cover.bytes) == "fake-jpeg");
 
   std::remove(path.c_str());
 }

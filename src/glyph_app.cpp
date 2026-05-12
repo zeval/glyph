@@ -167,6 +167,7 @@ int App::run() {
 }
 
 void App::shutdown() {
+  clearCoverTexture();
   if (font_ != nullptr) {
     TTF_CloseFont(font_);
     font_ = nullptr;
@@ -390,6 +391,7 @@ void App::refreshLibrary() {
         book.readable = true;
         book.title = document.book().metadata.title;
         book.subtitle = authorsLine(document.book().metadata.authors);
+        book.cover_image_path = document.book().cover_image_path;
       } else {
         book.subtitle = document.error();
       }
@@ -445,6 +447,82 @@ void App::setReaderText(const std::string& title, const std::string& status,
     reader_lines_.push_back("No readable text.");
   }
   reader_scroll_ = 0;
+}
+
+void App::clearCoverTexture() {
+  if (cover_texture_ != nullptr) {
+    SDL_DestroyTexture(cover_texture_);
+    cover_texture_ = nullptr;
+  }
+  cover_texture_width_ = 0;
+  cover_texture_height_ = 0;
+}
+
+void App::updateSelectedCover() {
+  if (cover_texture_book_ == selected_book_) {
+    return;
+  }
+
+  clearCoverTexture();
+  cover_texture_book_ = selected_book_;
+  if (selected_book_ < 0 || selected_book_ >= static_cast<int>(books_.size())) {
+    return;
+  }
+
+  const BookEntry& book = books_[static_cast<size_t>(selected_book_)];
+  if (book.path.empty() || book.cover_image_path.empty()) {
+    return;
+  }
+
+  EpubDocument document;
+  if (!document.open(book.path)) {
+    return;
+  }
+
+  ZipReadResult resource = document.readResource(book.cover_image_path);
+  if (!resource.ok || resource.bytes.empty() || resource.bytes.size() > 4u * 1024u * 1024u) {
+    return;
+  }
+
+  SDL_RWops* rw =
+      SDL_RWFromConstMem(resource.bytes.data(), static_cast<int>(resource.bytes.size()));
+  if (rw == nullptr) {
+    return;
+  }
+
+  SDL_Surface* surface = IMG_Load_RW(rw, 1);
+  if (surface == nullptr) {
+    return;
+  }
+
+  cover_texture_ = SDL_CreateTextureFromSurface(renderer_, surface);
+  if (cover_texture_ != nullptr) {
+    cover_texture_width_ = surface->w;
+    cover_texture_height_ = surface->h;
+    SDL_SetTextureBlendMode(cover_texture_, SDL_BLENDMODE_BLEND);
+  }
+  SDL_FreeSurface(surface);
+}
+
+void App::drawCoverPreview(int x, int y, int w, int h) {
+  fillRect(x, y, w, h, kPanel);
+  strokeRect(x, y, w, h, kPanelHi);
+
+  updateSelectedCover();
+  if (cover_texture_ == nullptr || cover_texture_width_ <= 0 || cover_texture_height_ <= 0) {
+    drawText("No cover", x + 18, y + h / 2 - 8, kMuted);
+    return;
+  }
+
+  const int inset = 8;
+  const int max_w = std::max(1, w - inset * 2);
+  const int max_h = std::max(1, h - inset * 2);
+  const double scale = std::min(static_cast<double>(max_w) / cover_texture_width_,
+                                static_cast<double>(max_h) / cover_texture_height_);
+  const int dst_w = std::max(1, static_cast<int>(cover_texture_width_ * scale));
+  const int dst_h = std::max(1, static_cast<int>(cover_texture_height_ * scale));
+  SDL_Rect dst = {x + (w - dst_w) / 2, y + (h - dst_h) / 2, dst_w, dst_h};
+  SDL_RenderCopy(renderer_, cover_texture_, nullptr, &dst);
 }
 
 std::vector<std::string> App::wrapReaderText(const std::string& text) const {
@@ -533,12 +611,22 @@ void App::render() {
 void App::renderBrowser() {
   drawText(books_path_, 8, 32, kMuted);
 
+  constexpr int list_width = 282;
+  const int cover_x = list_width + 18;
+  const int cover_y = 42;
+  const int cover_w = config_.width - cover_x - 14;
+  const int cover_h = config_.height - cover_y - 42;
+  drawCoverPreview(cover_x, cover_y, cover_w, cover_h);
+
+  SDL_Rect list_clip = {0, 28, list_width + 2, config_.height - 54};
+  SDL_RenderSetClipRect(renderer_, &list_clip);
+
   int y = 54;
   for (int i = 0; i < static_cast<int>(books_.size()); ++i) {
     const bool selected = i == selected_book_;
     if (selected) {
-      fillRect(6, y - 3, config_.width - 12, 34, kPanelHi);
-      strokeRect(6, y - 3, config_.width - 12, 34, kAccent);
+      fillRect(6, y - 3, list_width - 12, 34, kPanelHi);
+      strokeRect(6, y - 3, list_width - 12, 34, kAccent);
     }
     const BookEntry& book = books_[static_cast<size_t>(i)];
     drawText(book.title, 14, y, selected ? kText : kMuted);
@@ -549,6 +637,7 @@ void App::renderBrowser() {
     }
   }
 
+  SDL_RenderSetClipRect(renderer_, nullptr);
   drawText("Cross/Enter open  Circle/Esc back  Start/S settings", 8, config_.height - 18, kMuted);
 }
 

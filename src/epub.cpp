@@ -317,12 +317,45 @@ bool parseContainer(const std::string& xml, std::string& package_path) {
   return false;
 }
 
+bool hasToken(const std::string& value, const std::string& token) {
+  size_t pos = 0;
+  while (pos < value.size()) {
+    while (pos < value.size() && std::isspace(static_cast<unsigned char>(value[pos])) != 0) {
+      ++pos;
+    }
+    const size_t start = pos;
+    while (pos < value.size() && std::isspace(static_cast<unsigned char>(value[pos])) == 0) {
+      ++pos;
+    }
+    if (start < pos && value.substr(start, pos - start) == token) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool isImageMediaType(const std::string& media_type) {
+  const std::string lowered = toLowerAscii(media_type);
+  return lowered == "image/jpeg" || lowered == "image/jpg" || lowered == "image/png" ||
+         lowered == "image/gif";
+}
+
+bool looksLikeCoverImage(const EpubManifestItem& item) {
+  if (!isImageMediaType(item.media_type)) {
+    return false;
+  }
+  const std::string id = toLowerAscii(item.id);
+  const std::string href = toLowerAscii(item.href);
+  return id.find("cover") != std::string::npos || href.find("cover") != std::string::npos;
+}
+
 void parsePackage(const std::string& xml, const std::string& package_path, EpubBook& book) {
   book.package_path = package_path;
   book.metadata.title = firstTextForTag(xml, "title");
   book.metadata.language = firstTextForTag(xml, "language");
   book.metadata.identifier = firstTextForTag(xml, "identifier");
 
+  std::string cover_id;
   size_t pos = 0;
   XmlTag tag;
   while (nextTag(xml, pos, tag)) {
@@ -337,6 +370,12 @@ void parsePackage(const std::string& xml, const std::string& package_path, EpubB
         if (!name.empty()) {
           book.metadata.authors.push_back(name);
         }
+      }
+    } else if (tag.local_name == "meta") {
+      const std::string* name = attr(tag, "name");
+      const std::string* content = attr(tag, "content");
+      if (name != nullptr && content != nullptr && toLowerAscii(*name) == "cover") {
+        cover_id = *content;
       }
     } else if (tag.local_name == "item") {
       EpubManifestItem item;
@@ -353,8 +392,28 @@ void parsePackage(const std::string& xml, const std::string& package_path, EpubB
         item.properties = *value;
       }
       if (!item.id.empty() && !item.href.empty()) {
+        if (book.cover_image_path.empty() && isImageMediaType(item.media_type) &&
+            hasToken(item.properties, "cover-image")) {
+          book.cover_image_path = item.href;
+        }
         book.manifest.push_back(item);
       }
+    }
+  }
+
+  if (!cover_id.empty()) {
+    const auto cover_item =
+        std::find_if(book.manifest.begin(), book.manifest.end(),
+                     [&cover_id](const EpubManifestItem& item) { return item.id == cover_id; });
+    if (cover_item != book.manifest.end() && isImageMediaType(cover_item->media_type)) {
+      book.cover_image_path = cover_item->href;
+    }
+  }
+  if (book.cover_image_path.empty()) {
+    const auto cover_item =
+        std::find_if(book.manifest.begin(), book.manifest.end(), looksLikeCoverImage);
+    if (cover_item != book.manifest.end()) {
+      book.cover_image_path = cover_item->href;
     }
   }
 
@@ -475,6 +534,15 @@ const std::string& EpubDocument::error() const {
 
 const EpubBook& EpubDocument::book() const {
   return book_;
+}
+
+ZipReadResult EpubDocument::readResource(const std::string& path) const {
+  if (path.empty()) {
+    ZipReadResult result;
+    result.error = "EPUB resource path is empty";
+    return result;
+  }
+  return archive_.readFile(path);
 }
 
 EpubTextResult EpubDocument::readSpineText(size_t spine_index) const {

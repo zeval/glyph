@@ -40,6 +40,7 @@ private:
     std::string title;
     std::string subtitle;
     std::string path;
+    std::string cover_image_path;
     bool readable = false;
   };
 
@@ -69,6 +70,9 @@ private:
   void openSelectedBook();
   void openBookPath(const std::string& path);
   void setReaderText(const std::string& title, const std::string& status, const std::string& text);
+  void clearCoverTexture();
+  void updateSelectedCover();
+  void drawCoverPreview(int x, int y, int w, int h);
   std::vector<std::string> wrapReaderText(const std::string& text) const;
   int linesPerPage() const;
   int maxReaderScroll() const;
@@ -86,6 +90,10 @@ private:
   SDL_Window* window_ = nullptr;
   SDL_Renderer* renderer_ = nullptr;
   TTF_Font* font_ = nullptr;
+  SDL_Texture* cover_texture_ = nullptr;
+  int cover_texture_book_ = -1;
+  int cover_texture_width_ = 0;
+  int cover_texture_height_ = 0;
   bool running_ = false;
   bool needs_render_ = true;
   Screen screen_ = Screen::Browser;

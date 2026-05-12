@@ -33,6 +33,7 @@ struct EpubSpineItem {
 struct EpubBook {
   std::string file_path;
   std::string package_path;
+  std::string cover_image_path;
   EpubMetadata metadata;
   std::vector<EpubManifestItem> manifest;
   std::vector<EpubSpineItem> spine;
@@ -52,6 +53,7 @@ public:
 
   const std::string& error() const;
   const EpubBook& book() const;
+  ZipReadResult readResource(const std::string& path) const;
   EpubTextResult readSpineText(size_t spine_index) const;
   EpubTextResult readFirstReadableSpineText() const;
   EpubTextResult readAllReadableSpineText() const;
