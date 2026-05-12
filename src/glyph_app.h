@@ -87,6 +87,7 @@ private:
   SDL_Renderer* renderer_ = nullptr;
   TTF_Font* font_ = nullptr;
   bool running_ = false;
+  bool needs_render_ = true;
   Screen screen_ = Screen::Browser;
   int selected_book_ = 0;
   int selected_setting_ = 0;

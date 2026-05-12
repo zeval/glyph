@@ -11,6 +11,7 @@
 
 #if defined(GLYPH_PLATFORM_PSP)
 #include <pspctrl.h>
+#include <pspdisplay.h>
 #endif
 
 namespace glyph {
@@ -124,6 +125,7 @@ bool App::init() {
   SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_BLEND);
   loadFont();
   running_ = true;
+  needs_render_ = true;
   return true;
 }
 
@@ -132,12 +134,32 @@ int App::run() {
     InputState input;
     SDL_Event event;
     while (SDL_PollEvent(&event) != 0) {
+      if (event.type == SDL_WINDOWEVENT) {
+        needs_render_ = true;
+      }
       handleEvent(event, input);
     }
 
+    const Screen previous_screen = screen_;
+    const int previous_book = selected_book_;
+    const int previous_setting = selected_setting_;
+    const int previous_scroll = reader_scroll_;
+    const size_t previous_line_count = reader_lines_.size();
+
     pollPlatformInput(input);
     applyInput(input);
-    render();
+
+    if (screen_ != previous_screen || selected_book_ != previous_book ||
+        selected_setting_ != previous_setting || reader_scroll_ != previous_scroll ||
+        reader_lines_.size() != previous_line_count) {
+      needs_render_ = true;
+    }
+
+    if (needs_render_) {
+      render();
+      needs_render_ = false;
+    }
+
     SDL_Delay(16);
   }
 
@@ -502,6 +524,9 @@ void App::render() {
     break;
   }
 
+#if defined(GLYPH_PLATFORM_PSP)
+  sceDisplayWaitVblankStart();
+#endif
   SDL_RenderPresent(renderer_);
 }
 
