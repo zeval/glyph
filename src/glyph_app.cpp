@@ -3,6 +3,7 @@
 #include "epub.h"
 #include "library.h"
 #include "progress.h"
+#include "settings_store.h"
 #include "text_layout.h"
 
 #include <SDL_image.h>
@@ -10,6 +11,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdio>
+#include <cstdlib>
 
 #if defined(GLYPH_PLATFORM_PSP)
 #include <pspctrl.h>
@@ -128,14 +130,9 @@ std::string chapterTitleFor(const EpubSpineItem& spine, const std::string& text,
 } // namespace
 
 App::App(AppConfig config) : config_(config) {
-  settings_ = {
-      "Theme: dark",
-      "Font: Atkinson",
-      "Bumpers: half-page + edge page",
-      "D-pad: page/line navigation",
-      "Circle: save progress and return",
-      std::string("Storage: ") + defaultStorageRootPath(),
-  };
+  const AppSettings settings = loadAppSettings(defaultSettingsPath());
+  scroll_step_mode_ = clampScrollStepMode(settings.scroll_step_mode);
+  updateSettingsLabels();
 
   refreshLibrary();
   setReaderText("No book open", "Open an EPUB from the library.",
@@ -310,6 +307,33 @@ void App::handleEvent(const SDL_Event& event, InputState& input) {
   case SDLK_TAB:
     input.status = true;
     break;
+  case SDLK_BACKSPACE:
+    input.delete_digit = true;
+    break;
+  case SDLK_0:
+  case SDLK_1:
+  case SDLK_2:
+  case SDLK_3:
+  case SDLK_4:
+  case SDLK_5:
+  case SDLK_6:
+  case SDLK_7:
+  case SDLK_8:
+  case SDLK_9:
+    input.digit = static_cast<int>(key - SDLK_0);
+    break;
+  case SDLK_KP_0:
+  case SDLK_KP_1:
+  case SDLK_KP_2:
+  case SDLK_KP_3:
+  case SDLK_KP_4:
+  case SDLK_KP_5:
+  case SDLK_KP_6:
+  case SDLK_KP_7:
+  case SDLK_KP_8:
+  case SDLK_KP_9:
+    input.digit = static_cast<int>(key - SDLK_KP_0);
+    break;
   default:
     break;
   }
@@ -351,12 +375,14 @@ void App::applyInput(const InputState& input) {
   }
 
   if (input.menu) {
-    screen_ = Screen::Settings;
-  }
-  if (input.toc) {
-    if (screen_ == Screen::Reader) {
-      saveCurrentProgress();
+    if (screen_ == Screen::Settings) {
+      screen_ = settings_return_screen_;
+    } else {
+      openSettings();
     }
+    return;
+  }
+  if (input.toc && screen_ != Screen::Reader) {
     screen_ = Screen::Browser;
   }
 
@@ -378,6 +404,14 @@ void App::applyInput(const InputState& input) {
     break;
 
   case Screen::Reader:
+    if (jump_overlay_open_) {
+      applyJumpOverlayInput(input);
+      break;
+    }
+    if (input.toc || input.status) {
+      openJumpOverlay();
+      break;
+    }
     if (input.right) {
       pageReaderForward();
     }
@@ -398,6 +432,7 @@ void App::applyInput(const InputState& input) {
     }
     if (input.back) {
       saveCurrentProgress();
+      closeJumpOverlay();
       screen_ = Screen::Browser;
     }
     break;
@@ -410,8 +445,14 @@ void App::applyInput(const InputState& input) {
     if (input.up) {
       selected_setting_ = std::max(0, selected_setting_ - 1);
     }
-    if (input.back || input.menu) {
-      screen_ = Screen::Reader;
+    if (input.left) {
+      adjustSelectedSetting(-1);
+    }
+    if (input.right || input.accept) {
+      adjustSelectedSetting(1);
+    }
+    if (input.back) {
+      screen_ = settings_return_screen_;
     }
     break;
   }
@@ -441,6 +482,158 @@ void App::updateBookProgress(const BookProgress& progress) {
       return;
     }
   }
+}
+
+void App::openSettings() {
+  closeJumpOverlay();
+  settings_return_screen_ = screen_;
+  selected_setting_ = 0;
+  screen_ = Screen::Settings;
+}
+
+void App::adjustSelectedSetting(int delta) {
+  if (selected_setting_ != 2) {
+    return;
+  }
+
+  scroll_step_mode_ = clampScrollStepMode(scroll_step_mode_ + delta);
+  AppSettings settings;
+  settings.scroll_step_mode = scroll_step_mode_;
+  saveAppSettings(defaultSettingsPath(), settings);
+  updateSettingsLabels();
+}
+
+void App::updateSettingsLabels() {
+  settings_ = {
+      "Theme: dark",
+      "Font: Atkinson",
+      "Bumper step: " + scrollStepModeLabel(scroll_step_mode_),
+      "Triangle: jump to chapter/page",
+      "Select: jump to chapter/page",
+      "D-pad: page/line navigation",
+      "Circle: save progress and return",
+      std::string("Storage: ") + defaultStorageRootPath(),
+  };
+}
+
+void App::openJumpOverlay() {
+  if (reader_lines_.empty()) {
+    return;
+  }
+  syncSelectedChapterToScroll();
+  jump_mode_ = JumpMode::Chapters;
+  page_entry_.clear();
+  jump_overlay_open_ = true;
+}
+
+void App::closeJumpOverlay() {
+  jump_overlay_open_ = false;
+  page_entry_.clear();
+}
+
+void App::applyJumpOverlayInput(const InputState& input) {
+  if (input.back || input.toc) {
+    closeJumpOverlay();
+    return;
+  }
+  if (input.left || input.right || input.status) {
+    jump_mode_ = jump_mode_ == JumpMode::Chapters ? JumpMode::Page : JumpMode::Chapters;
+  }
+
+  if (jump_mode_ == JumpMode::Chapters) {
+    const int chapter_count = static_cast<int>(reader_chapters_.size());
+    if (input.down && chapter_count > 0) {
+      selected_chapter_ = std::min(chapter_count - 1, selected_chapter_ + 1);
+    }
+    if (input.up && chapter_count > 0) {
+      selected_chapter_ = std::max(0, selected_chapter_ - 1);
+    }
+    if (input.shoulder_r_click && chapter_count > 0) {
+      selected_chapter_ = std::min(chapter_count - 1, selected_chapter_ + 5);
+    }
+    if (input.shoulder_l_click && chapter_count > 0) {
+      selected_chapter_ = std::max(0, selected_chapter_ - 5);
+    }
+    if (input.accept && chapter_count > 0) {
+      jumpToChapter(selected_chapter_);
+      closeJumpOverlay();
+    }
+    return;
+  }
+
+  int page = pageEntryValue();
+  if (input.digit >= 0 && page_entry_.size() < 4) {
+    if (page_entry_ == "0") {
+      page_entry_.clear();
+    }
+    page_entry_.push_back(static_cast<char>('0' + input.digit));
+  }
+  if (input.delete_digit && !page_entry_.empty()) {
+    page_entry_.pop_back();
+  }
+  if (input.up) {
+    page = std::max(1, page + 1);
+    page_entry_ = std::to_string(std::min(totalPageCount(), page));
+  }
+  if (input.down) {
+    page = std::max(1, page - 1);
+    page_entry_ = std::to_string(page);
+  }
+  if (input.shoulder_r_click) {
+    page_entry_ = std::to_string(std::min(totalPageCount(), page + 10));
+  }
+  if (input.shoulder_l_click) {
+    page_entry_ = std::to_string(std::max(1, page - 10));
+  }
+  if (input.accept) {
+    jumpToPage(pageEntryValue());
+    closeJumpOverlay();
+  }
+}
+
+void App::syncSelectedChapterToScroll() {
+  selected_chapter_ = 0;
+  for (int i = 0; i < static_cast<int>(reader_chapters_.size()); ++i) {
+    if (reader_scroll_ >= reader_chapters_[static_cast<size_t>(i)].start_line) {
+      selected_chapter_ = i;
+    }
+  }
+}
+
+int App::currentPageNumber() const {
+  return std::min(totalPageCount(), (reader_scroll_ / linesPerPage()) + 1);
+}
+
+int App::totalPageCount() const {
+  if (reader_lines_.empty()) {
+    return 1;
+  }
+  const int page_lines = linesPerPage();
+  return std::max(1, (static_cast<int>(reader_lines_.size()) + page_lines - 1) / page_lines);
+}
+
+int App::pageEntryValue() const {
+  if (page_entry_.empty()) {
+    return currentPageNumber();
+  }
+  const int page = std::atoi(page_entry_.c_str());
+  return std::max(1, std::min(totalPageCount(), page));
+}
+
+void App::jumpToPage(int page) {
+  const int clamped_page = std::max(1, std::min(totalPageCount(), page));
+  reader_scroll_ = std::min(maxReaderScroll(), (clamped_page - 1) * linesPerPage());
+  syncSelectedChapterToScroll();
+}
+
+void App::jumpToChapter(int chapter_index) {
+  if (chapter_index < 0 || chapter_index >= static_cast<int>(reader_chapters_.size())) {
+    return;
+  }
+  reader_scroll_ =
+      std::min(maxReaderScroll(),
+               std::max(0, reader_chapters_[static_cast<size_t>(chapter_index)].start_line));
+  selected_chapter_ = chapter_index;
 }
 
 void App::pageReaderForward() {
@@ -748,7 +941,18 @@ int App::linesPerPage() const {
 }
 
 int App::readerScrollStep() const {
-  return std::max(2, linesPerPage() / 2);
+  const int page_lines = linesPerPage();
+  switch (clampScrollStepMode(scroll_step_mode_)) {
+  case 0:
+    return 1;
+  case 1:
+    return std::max(2, page_lines / 3);
+  case 2:
+    return std::max(2, page_lines / 2);
+  case 3:
+    return page_lines;
+  }
+  return std::max(2, page_lines / 2);
 }
 
 int App::maxReaderScroll() const {
@@ -833,6 +1037,24 @@ void App::prepareRenderResources() {
         break;
       }
       prepareText(reader_lines_[static_cast<size_t>(line_index)], kText);
+    }
+    if (jump_overlay_open_) {
+      prepareText("Jump", kAccent);
+      prepareText(jump_mode_ == JumpMode::Chapters ? "Chapters" : "Page", kText);
+      prepareText("Left/Right mode  Cross jump  Circle close", kMuted);
+      prepareText("Page " + std::to_string(pageEntryValue()) + "/" +
+                      std::to_string(totalPageCount()),
+                  kText);
+      prepareText("Type digits on host; Up/Down adjusts", kMuted);
+      const int chapter_count = static_cast<int>(reader_chapters_.size());
+      const int visible_count = 7;
+      const int first = std::max(
+          0, std::min(selected_chapter_ - visible_count / 2, chapter_count - visible_count));
+      const int last = std::min(chapter_count, first + visible_count);
+      for (int i = first; i < last; ++i) {
+        prepareText(reader_chapters_[static_cast<size_t>(i)].title,
+                    i == selected_chapter_ ? kText : kMuted);
+      }
     }
     break;
   }
@@ -937,6 +1159,9 @@ void App::render() {
     break;
   case Screen::Reader:
     renderReader();
+    if (jump_overlay_open_) {
+      renderJumpOverlay();
+    }
     break;
   case Screen::Settings:
     renderSettings();
@@ -1013,6 +1238,55 @@ void App::renderReader() {
   SDL_RenderSetClipRect(renderer_, nullptr);
 }
 
+void App::renderJumpOverlay() {
+  const int x = 44;
+  const int y = 38;
+  const int w = config_.width - 88;
+  const int h = config_.height - 76;
+  fillRect(x, y, w, h, {16, 19, 22, 246});
+  strokeRect(x, y, w, h, kAccent);
+
+  drawText("Jump", x + 10, y + 8, kAccent);
+  drawTextRight(jump_mode_ == JumpMode::Chapters ? "Chapters" : "Page", x + w - 10, y + 8, kText);
+  fillRect(x + 1, y + 30, w - 2, 1, kPanelHi);
+
+  if (jump_mode_ == JumpMode::Chapters) {
+    const int chapter_count = static_cast<int>(reader_chapters_.size());
+    if (chapter_count <= 0) {
+      drawText("No chapter list available", x + 12, y + 48, kMuted);
+    } else {
+      const int visible_count = 7;
+      const int first = std::max(
+          0, std::min(selected_chapter_ - visible_count / 2, chapter_count - visible_count));
+      const int last = std::min(chapter_count, first + visible_count);
+      int row_y = y + 42;
+      for (int i = first; i < last; ++i) {
+        const bool selected = i == selected_chapter_;
+        if (selected) {
+          fillRect(x + 8, row_y - 3, w - 16, 20, kPanelHi);
+        }
+        drawTextClipped(std::to_string(i + 1) + ". " +
+                            reader_chapters_[static_cast<size_t>(i)].title,
+                        x + 14, row_y, w - 28, selected ? kText : kMuted);
+        row_y += 22;
+      }
+    }
+  } else {
+    const std::string page_value =
+        page_entry_.empty() ? std::to_string(currentPageNumber()) : page_entry_;
+    drawText("Page", x + 16, y + 54, kMuted);
+    fillRect(x + 70, y + 46, 96, 28, kPanel);
+    strokeRect(x + 70, y + 46, 96, 28, kPanelHi);
+    drawText(page_value, x + 82, y + 53, kText);
+    drawText("/ " + std::to_string(totalPageCount()), x + 176, y + 54, kMuted);
+    drawText("Host digits type page number", x + 16, y + 92, kMuted);
+    drawText("Up/Down +/-1  L/R +/-10", x + 16, y + 114, kMuted);
+  }
+
+  fillRect(x + 1, y + h - 27, w - 2, 1, kPanelHi);
+  drawText("Left/Right mode  Cross jump  Circle close", x + 10, y + h - 19, kMuted);
+}
+
 void App::renderSettings() {
   drawText("Settings", 8, 32, kAccent);
 
@@ -1026,7 +1300,7 @@ void App::renderSettings() {
     y += 24;
   }
 
-  drawText("Circle/Esc or Start/S closes", 8, config_.height - 18, kMuted);
+  drawText("Left/Right adjust  Circle/Esc closes", 8, config_.height - 18, kMuted);
 }
 
 void App::drawText(const std::string& text, int x, int y, SDL_Color color) {

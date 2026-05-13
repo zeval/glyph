@@ -12,11 +12,17 @@
 namespace glyph {
 
 struct BookProgress;
+struct AppSettings;
 
 enum class Screen {
   Browser,
   Reader,
   Settings,
+};
+
+enum class JumpMode {
+  Chapters,
+  Page,
 };
 
 struct AppConfig {
@@ -62,6 +68,8 @@ private:
     bool status = false;
     bool shoulder_l_click = false;
     bool shoulder_r_click = false;
+    bool delete_digit = false;
+    int digit = -1;
     bool quit = false;
   };
 
@@ -86,6 +94,18 @@ private:
   void applyInput(const InputState& input);
   void saveCurrentProgress();
   void updateBookProgress(const BookProgress& progress);
+  void openSettings();
+  void adjustSelectedSetting(int delta);
+  void updateSettingsLabels();
+  void openJumpOverlay();
+  void closeJumpOverlay();
+  void applyJumpOverlayInput(const InputState& input);
+  void syncSelectedChapterToScroll();
+  int currentPageNumber() const;
+  int totalPageCount() const;
+  int pageEntryValue() const;
+  void jumpToPage(int page);
+  void jumpToChapter(int chapter_index);
   void pageReaderForward();
   void pageReaderBackward();
   void stepOrPageReaderForward();
@@ -116,6 +136,7 @@ private:
   void renderBrowser();
   void renderReader();
   void renderSettings();
+  void renderJumpOverlay();
   void drawText(const std::string& text, int x, int y, SDL_Color color);
   void drawTextRight(const std::string& text, int right_x, int y, SDL_Color color);
   void drawTextClipped(const std::string& text, int x, int y, int max_width, SDL_Color color);
@@ -134,10 +155,16 @@ private:
   bool running_ = false;
   bool needs_render_ = true;
   Screen screen_ = Screen::Browser;
+  Screen settings_return_screen_ = Screen::Browser;
+  bool jump_overlay_open_ = false;
+  JumpMode jump_mode_ = JumpMode::Chapters;
   int selected_book_ = 0;
   int selected_setting_ = 0;
+  int selected_chapter_ = 0;
   int reader_scroll_ = 0;
+  int scroll_step_mode_ = 2;
   uint32_t previous_platform_buttons_ = 0;
+  std::string page_entry_;
 
   std::vector<BookEntry> books_;
   std::string books_path_;
@@ -149,7 +176,7 @@ private:
   std::vector<ReaderChapter> reader_chapters_;
   std::vector<TextTextureEntry> text_cache_;
   uint32_t text_cache_tick_ = 0;
-  std::array<std::string, 6> settings_;
+  std::array<std::string, 8> settings_;
 };
 
 } // namespace glyph

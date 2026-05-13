@@ -20,6 +20,7 @@ add_executable(glyph
   src/library.cpp
   src/main.cpp
   src/progress.cpp
+  src/settings_store.cpp
 )
 
 target_include_directories(glyph_document PUBLIC src)
@@ -160,8 +161,10 @@ if(GLYPH_BUILD_TESTS AND NOT PSP AND NOT GLYPH_BUILD_PSP)
     add_executable(glyph_tests
       src/library.cpp
       src/progress.cpp
+      src/settings_store.cpp
       tests/epub_tests.cpp
       tests/progress_tests.cpp
+      tests/settings_store_tests.cpp
       tests/smoke_tests.cpp
       tests/text_layout_tests.cpp
       tests/zip_tests.cpp

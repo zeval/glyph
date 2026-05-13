@@ -61,11 +61,14 @@ Current direction:
 - The status bar should show book title, current chapter, and page/progress.
 - Button hints should move out of the main reader surface. Temporary home: settings/help.
 - TODO(ui): add a dedicated Start/help overlay for reader controls once the menu model exists.
+- Triangle or Select opens an in-reader jump overlay.
+- The jump overlay supports chapter selection and page number entry.
 
 Controls:
 
 - R click: scroll down by a coarse chunk within the current page; jump to next page at the page edge.
 - L click: scroll up by a coarse chunk within the current page; jump to previous page at the page edge.
+- The L/R scroll chunk is user-configurable from Settings.
 - R/L hold: no action in v1.
 - D-pad right/left: next/previous page.
 - D-pad up/down: fine line scroll.
@@ -89,6 +92,8 @@ Controls:
 - D-pad/analog: move.
 - Cross: jump.
 - Circle/Triangle: return to reader.
+- Left/right: switch between chapter list and page entry.
+- Host keyboard digits: enter page number in page entry mode.
 
 ### Reader Settings
 
@@ -100,6 +105,7 @@ Settings:
 - Theme.
 - Page mode vs scroll mode preference.
 - Page turn direction if desired.
+- Bumper scroll chunk size.
 - CPU/performance mode optional.
 
 Controls:
