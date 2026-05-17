@@ -2,12 +2,12 @@
 
 This folder contains original project artwork source material for `glyph`.
 
-## Logo Concept
+## Logo Directions
 
 - Source: `logo-concept.html`
 - Format: static HTML/CSS with inline SVG.
-- Direction: simple angular lowercase `g`, dark reader UI base, blue/cyan
-  signal color, strong launcher-scale silhouette.
+- Direction: multiple lowercase `g` concepts, dark reader UI base, blue/cyan
+  signal color, strong launcher-scale silhouettes.
 
 ## Palette
 
@@ -19,10 +19,10 @@ This folder contains original project artwork source material for `glyph`.
 
 ## Future Exports
 
-Use the inline SVG symbol `#glyph-logo` in `logo-concept.html` as the source for
-raster and icon exports. Useful target sizes are 512, 256, 128, 64, 48, 32, and
-16 px. PSP-facing exports should be checked on dark launcher backgrounds and in
-PPSSPP before being promoted to runtime assets.
+Use the inline SVG symbols in `logo-concept.html` as source material for the
+chosen direction. Useful target sizes are 512, 256, 128, 64, 48, 32, and 16 px.
+PSP-facing exports should be checked on dark launcher backgrounds and in PPSSPP
+before being promoted to runtime assets.
 
 ## Licensing
 

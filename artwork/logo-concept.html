@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>glyph logo concept</title>
+  <title>glyph logo directions</title>
   <style>
     :root {
       --bg: #0c0e10;
@@ -36,178 +36,200 @@
     }
 
     main {
-      width: min(1120px, calc(100% - 32px));
+      width: min(1180px, calc(100% - 32px));
       margin: 0 auto;
-      padding: 40px 0;
+      padding: 40px 0 56px;
     }
 
     header {
-      display: flex;
-      align-items: end;
-      justify-content: space-between;
-      gap: 24px;
+      display: grid;
+      gap: 10px;
       margin-bottom: 28px;
       border-bottom: 1px solid rgba(148, 160, 164, 0.24);
-      padding-bottom: 18px;
+      padding-bottom: 20px;
     }
 
     h1,
     h2,
+    h3,
     p {
       margin: 0;
     }
 
-    h1 {
-      font-size: clamp(2rem, 6vw, 5rem);
+    h1,
+    .wordmark {
       font-family: var(--brand-font);
       font-weight: 800;
       letter-spacing: 0;
+    }
+
+    h1 {
+      font-size: clamp(2.4rem, 7vw, 5.8rem);
       line-height: 0.9;
     }
 
-    .tagline {
-      max-width: 34rem;
+    h2 {
+      color: var(--accent-hot);
+      font-size: 0.86rem;
+      font-weight: 700;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    h3 {
+      font-size: 1.18rem;
+      font-weight: 760;
+      letter-spacing: 0;
+    }
+
+    p {
       color: var(--muted);
-      font-size: 1rem;
-      line-height: 1.5;
+      line-height: 1.55;
     }
 
-    .stage {
+    .intro {
+      max-width: 720px;
+    }
+
+    .directions {
       display: grid;
-      grid-template-columns: minmax(280px, 1.18fr) minmax(280px, 0.82fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 24px;
+    }
+
+    .card {
+      display: grid;
+      grid-template-columns: minmax(220px, 0.92fr) minmax(220px, 1fr);
+      gap: 20px;
       align-items: stretch;
-    }
-
-    .surface {
-      background: rgba(24, 28, 32, 0.88);
       border: 1px solid rgba(148, 160, 164, 0.2);
+      background: rgba(24, 28, 32, 0.9);
       box-shadow: 0 24px 80px var(--shadow);
-      padding: 24px;
+      padding: 20px;
     }
 
-    .hero-mark {
+    .mark-stage {
       display: grid;
       place-items: center;
-      min-height: 620px;
+      min-height: 320px;
+      border: 1px solid rgba(148, 160, 164, 0.14);
+      background: rgba(12, 14, 16, 0.72);
     }
 
-    .logo-master {
-      width: min(100%, 560px);
+    .mark-stage svg {
+      width: min(100%, 300px);
       height: auto;
     }
 
-    .side {
+    .content {
       display: grid;
-      gap: 24px;
+      align-content: start;
+      gap: 16px;
     }
 
-    .preview-grid {
+    .title-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .label {
+      color: var(--accent-hot);
+      font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+
+    .previews {
       display: grid;
-      grid-template-columns: repeat(4, minmax(56px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
       align-items: end;
     }
 
     .preview {
       display: grid;
-      gap: 10px;
+      gap: 8px;
       justify-items: center;
       color: var(--muted);
-      font-size: 0.8rem;
+      font-size: 0.75rem;
     }
 
     .preview svg {
-      display: block;
-      width: 100%;
-      max-width: var(--size);
-      height: auto;
-    }
-
-    .palette {
-      display: grid;
-      gap: 10px;
-    }
-
-    .swatch {
-      display: grid;
-      grid-template-columns: 44px 1fr auto;
-      gap: 12px;
-      align-items: center;
-      color: var(--muted);
-      font-size: 0.9rem;
-    }
-
-    .chip {
-      width: 44px;
-      height: 28px;
-      border: 1px solid rgba(232, 230, 222, 0.2);
-      background: var(--chip);
-    }
-
-    .code {
-      color: var(--text);
-      font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-      font-size: 0.85rem;
-    }
-
-    .notes {
-      display: grid;
-      gap: 12px;
-      color: var(--muted);
-      font-size: 0.95rem;
-      line-height: 1.5;
+      width: var(--size);
+      height: var(--size);
     }
 
     .wordmark {
       display: flex;
       align-items: center;
-      gap: 14px;
-      margin-top: 24px;
-      padding-top: 20px;
-      border-top: 1px solid rgba(148, 160, 164, 0.2);
+      gap: 12px;
+      border-top: 1px solid rgba(148, 160, 164, 0.18);
+      padding-top: 14px;
+      color: var(--text);
+      font-size: clamp(2rem, 5vw, 3.7rem);
+      line-height: 0.9;
     }
 
     .wordmark svg {
-      width: 58px;
-      height: 58px;
+      width: 48px;
+      height: 48px;
       flex: 0 0 auto;
     }
 
-    .wordmark span {
-      color: var(--text);
-      font-size: clamp(2.3rem, 8vw, 4.8rem);
-      font-family: var(--brand-font);
-      font-weight: 800;
-      letter-spacing: 0;
-      line-height: 0.82;
+    .palette {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 24px;
+      border: 1px solid rgba(148, 160, 164, 0.2);
+      background: rgba(24, 28, 32, 0.86);
+      padding: 16px;
     }
 
-    @media (max-width: 860px) {
-      main {
-        width: min(100% - 24px, 680px);
-        padding: 24px 0;
-      }
+    .swatch {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 0.82rem;
+    }
 
-      header,
-      .stage {
-        display: grid;
+    .chip {
+      width: 34px;
+      height: 20px;
+      border: 1px solid rgba(232, 230, 222, 0.22);
+      background: var(--chip);
+    }
+
+    @media (max-width: 960px) {
+      .directions,
+      .card {
         grid-template-columns: 1fr;
       }
+    }
 
-      .hero-mark {
-        min-height: 360px;
+    @media (max-width: 620px) {
+      main {
+        width: min(100% - 20px, 560px);
+        padding: 24px 0 40px;
       }
 
-      .surface {
-        padding: 18px;
+      .card {
+        padding: 16px;
+      }
+
+      .mark-stage {
+        min-height: 250px;
       }
     }
   </style>
 </head>
 <body>
   <svg width="0" height="0" aria-hidden="true" focusable="false" style="position: absolute">
-    <symbol id="glyph-logo" viewBox="0 0 512 512">
+    <symbol id="tile" viewBox="0 0 512 512">
       <rect x="48" y="48" width="416" height="416" rx="68" fill="#0c0e10"></rect>
       <rect
         x="56"
@@ -218,105 +240,224 @@
         fill="none"
         stroke="#26323a"
         stroke-width="16"></rect>
+    </symbol>
+
+    <symbol id="mark-a" viewBox="0 0 512 512">
+      <use href="#tile"></use>
       <path
-        d="
-          M174 122 H330 L384 176 V382 L340 426 H210 V372 H314 L330 356 V330 H174
-          L120 276 V176 Z
-          M204 188 L186 206 V246 L204 264 H292 L310 246 V206 L292 188 Z"
-        fill="#62a4a8"
-        fill-rule="evenodd"></path>
+        d="M344 128H218L140 206V284L206 350H330V382L306 406H214"
+        fill="none"
+        stroke="#62a4a8"
+        stroke-width="46"
+        stroke-linecap="square"
+        stroke-linejoin="miter"></path>
       <path
-        d="M204 150 H314 L356 192"
+        d="M330 128L374 172V328L330 372"
+        fill="none"
+        stroke="#62a4a8"
+        stroke-width="46"
+        stroke-linecap="square"
+        stroke-linejoin="miter"></path>
+      <path
+        d="M222 208H292L316 232V260L292 284H222L198 260V232Z"
+        fill="#0c0e10"></path>
+      <path
+        d="M224 150H330L354 174"
         fill="none"
         stroke="#7ee7f2"
         stroke-width="14"
         stroke-linecap="square"
         stroke-linejoin="miter"></path>
     </symbol>
+
+    <symbol id="mark-b" viewBox="0 0 512 512">
+      <use href="#tile"></use>
+      <path
+        d="
+          M178 128H322L384 190V328L326 386H226L174 334V204Z
+          M218 194L198 214V292L226 320H292L324 288V224L294 194Z"
+        fill="#62a4a8"
+        fill-rule="evenodd"></path>
+      <path d="M326 386H384V426H278V368Z" fill="#62a4a8"></path>
+      <path d="M326 128L384 190H326Z" fill="#7ee7f2"></path>
+      <path d="M326 128V190H384" fill="none" stroke="#0c0e10" stroke-width="10"></path>
+    </symbol>
+
+    <symbol id="mark-c" viewBox="0 0 512 512">
+      <use href="#tile"></use>
+      <path
+        d="M332 126H218L138 206V294L218 374H330"
+        fill="none"
+        stroke="#62a4a8"
+        stroke-width="52"
+        stroke-linecap="square"
+        stroke-linejoin="bevel"></path>
+      <path
+        d="M334 126V392L304 422H214"
+        fill="none"
+        stroke="#62a4a8"
+        stroke-width="52"
+        stroke-linecap="square"
+        stroke-linejoin="bevel"></path>
+      <path
+        d="M226 206H282L306 230V270L282 294H226L202 270V230Z"
+        fill="#0c0e10"></path>
+      <path d="M358 168H392V202H358Z" fill="#7ee7f2"></path>
+    </symbol>
+
+    <symbol id="mark-d" viewBox="0 0 512 512">
+      <use href="#tile"></use>
+      <path d="M144 144H336V192H192V320H336V368H144Z" fill="#62a4a8"></path>
+      <path d="M288 192H384V400L336 448H216V400H312L336 376V368H288V320H336V240H288Z" fill="#62a4a8"></path>
+      <path d="M216 216H288V288H216Z" fill="#0c0e10"></path>
+      <path d="M144 144H336V164H164V320H144Z" fill="#7ee7f2"></path>
+    </symbol>
   </svg>
 
   <main>
     <header>
       <h1>glyph</h1>
-      <p class="tagline">Lowercase g identity concept for a PSP Go-first EPUB reader: dark reader chrome, cyan signal, and a compact angular silhouette that survives launcher sizes.</p>
+      <p class="intro">
+        Four fresh logo directions using the existing dark/cyan palette. They
+        avoid decorative artifacts, stay inside the tile border, and lean into a
+        sharper technical lowercase g.
+      </p>
     </header>
 
-    <section class="stage" aria-label="Logo concept sheet">
-      <div class="surface hero-mark">
-        <svg class="logo-master" viewBox="0 0 512 512" role="img" aria-labelledby="logo-title logo-desc">
-          <title id="logo-title">glyph lowercase g logo concept</title>
-          <desc id="logo-desc">An angular lowercase g mark in blue-cyan on a dark square app tile.</desc>
-          <use href="#glyph-logo"></use>
-        </svg>
-      </div>
-
-      <div class="side">
-        <section class="surface" aria-labelledby="previews-title">
-          <h2 id="previews-title">Size checks</h2>
-          <div class="preview-grid" aria-label="Small size logo previews">
-            <div class="preview" style="--size: 128px">
-              <svg viewBox="0 0 512 512" aria-hidden="true"><use href="#glyph-logo"></use></svg>
-              <span>128</span>
-            </div>
-            <div class="preview" style="--size: 64px">
-              <svg viewBox="0 0 512 512" aria-hidden="true"><use href="#glyph-logo"></use></svg>
-              <span>64</span>
-            </div>
-            <div class="preview" style="--size: 48px">
-              <svg viewBox="0 0 512 512" aria-hidden="true"><use href="#glyph-logo"></use></svg>
-              <span>48</span>
-            </div>
-            <div class="preview" style="--size: 32px">
-              <svg viewBox="0 0 512 512" aria-hidden="true"><use href="#glyph-logo"></use></svg>
-              <span>32</span>
-            </div>
+    <section class="directions" aria-label="Logo direction board">
+      <article class="card">
+        <div class="mark-stage">
+          <svg viewBox="0 0 512 512" role="img" aria-labelledby="a-title a-desc">
+            <title id="a-title">Direction A: circuit loop</title>
+            <desc id="a-desc">Angular monoline lowercase g with a squared descender.</desc>
+            <use href="#mark-a"></use>
+          </svg>
+        </div>
+        <div class="content">
+          <div class="title-row">
+            <h2>Direction A</h2>
+            <span class="label">circuit loop</span>
           </div>
-        </section>
-
-        <section class="surface" aria-labelledby="palette-title">
-          <h2 id="palette-title">Palette</h2>
-          <div class="palette">
-            <div class="swatch">
-              <span class="chip" style="--chip: #0c0e10"></span>
-              <span>reader black</span>
-              <span class="code">#0c0e10</span>
-            </div>
-            <div class="swatch">
-              <span class="chip" style="--chip: #181c20"></span>
-              <span>panel dark</span>
-              <span class="code">#181c20</span>
-            </div>
-            <div class="swatch">
-              <span class="chip" style="--chip: #62a4a8"></span>
-              <span>glyph cyan</span>
-              <span class="code">#62a4a8</span>
-            </div>
-            <div class="swatch">
-              <span class="chip" style="--chip: #7ee7f2"></span>
-              <span>edge light</span>
-              <span class="code">#7ee7f2</span>
-            </div>
-            <div class="swatch">
-              <span class="chip" style="--chip: #e8e6de"></span>
-              <span>reader text</span>
-              <span class="code">#e8e6de</span>
-            </div>
+          <h3>Fast, technical, lightweight</h3>
+          <p>
+            A monoline g built from squared turns. This is the most techy
+            option and should scale cleanly if the stroke stays heavy.
+          </p>
+          <div class="previews">
+            <span class="preview" style="--size: 96px"><svg viewBox="0 0 512 512"><use href="#mark-a"></use></svg>96</span>
+            <span class="preview" style="--size: 64px"><svg viewBox="0 0 512 512"><use href="#mark-a"></use></svg>64</span>
+            <span class="preview" style="--size: 40px"><svg viewBox="0 0 512 512"><use href="#mark-a"></use></svg>40</span>
+            <span class="preview" style="--size: 24px"><svg viewBox="0 0 512 512"><use href="#mark-a"></use></svg>24</span>
           </div>
-        </section>
+          <div class="wordmark">
+            <svg viewBox="0 0 512 512" aria-hidden="true"><use href="#mark-a"></use></svg>
+            <span>glyph</span>
+          </div>
+        </div>
+      </article>
 
-        <section class="surface notes" aria-labelledby="notes-title">
-          <h2 id="notes-title">Concept notes</h2>
-          <p>The mark is a solid, angular single-storey g with a clear counter and a short descender. It stays inside the tile border at every preview size.</p>
-          <p>The cyan body carries the silhouette, while the small light edge gives it a technical accent without adding internal clutter.</p>
-        </section>
-      </div>
+      <article class="card">
+        <div class="mark-stage">
+          <svg viewBox="0 0 512 512" role="img" aria-labelledby="b-title b-desc">
+            <title id="b-title">Direction B: folded page</title>
+            <desc id="b-desc">Solid lowercase g with a folded page corner.</desc>
+            <use href="#mark-b"></use>
+          </svg>
+        </div>
+        <div class="content">
+          <div class="title-row">
+            <h2>Direction B</h2>
+            <span class="label">folded page</span>
+          </div>
+          <h3>Reader-first, app-icon friendly</h3>
+          <p>
+            A solid g with a subtle page-fold cue. This one says ebook more
+            clearly while keeping the geometry sharp and compact.
+          </p>
+          <div class="previews">
+            <span class="preview" style="--size: 96px"><svg viewBox="0 0 512 512"><use href="#mark-b"></use></svg>96</span>
+            <span class="preview" style="--size: 64px"><svg viewBox="0 0 512 512"><use href="#mark-b"></use></svg>64</span>
+            <span class="preview" style="--size: 40px"><svg viewBox="0 0 512 512"><use href="#mark-b"></use></svg>40</span>
+            <span class="preview" style="--size: 24px"><svg viewBox="0 0 512 512"><use href="#mark-b"></use></svg>24</span>
+          </div>
+          <div class="wordmark">
+            <svg viewBox="0 0 512 512" aria-hidden="true"><use href="#mark-b"></use></svg>
+            <span>glyph</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="mark-stage">
+          <svg viewBox="0 0 512 512" role="img" aria-labelledby="c-title c-desc">
+            <title id="c-title">Direction C: terminal g</title>
+            <desc id="c-desc">Open angular g with a small terminal pixel.</desc>
+            <use href="#mark-c"></use>
+          </svg>
+        </div>
+        <div class="content">
+          <div class="title-row">
+            <h2>Direction C</h2>
+            <span class="label">terminal g</span>
+          </div>
+          <h3>Minimal, recognizably digital</h3>
+          <p>
+            Open shape, hard bevels, one tiny terminal block. It is less bookish
+            and more system-utility, which may fit the homebrew identity.
+          </p>
+          <div class="previews">
+            <span class="preview" style="--size: 96px"><svg viewBox="0 0 512 512"><use href="#mark-c"></use></svg>96</span>
+            <span class="preview" style="--size: 64px"><svg viewBox="0 0 512 512"><use href="#mark-c"></use></svg>64</span>
+            <span class="preview" style="--size: 40px"><svg viewBox="0 0 512 512"><use href="#mark-c"></use></svg>40</span>
+            <span class="preview" style="--size: 24px"><svg viewBox="0 0 512 512"><use href="#mark-c"></use></svg>24</span>
+          </div>
+          <div class="wordmark">
+            <svg viewBox="0 0 512 512" aria-hidden="true"><use href="#mark-c"></use></svg>
+            <span>glyph</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="mark-stage">
+          <svg viewBox="0 0 512 512" role="img" aria-labelledby="d-title d-desc">
+            <title id="d-title">Direction D: pixel spine</title>
+            <desc id="d-desc">Blocky lowercase g inspired by PSP-era UI pixels.</desc>
+            <use href="#mark-d"></use>
+          </svg>
+        </div>
+        <div class="content">
+          <div class="title-row">
+            <h2>Direction D</h2>
+            <span class="label">pixel spine</span>
+          </div>
+          <h3>Retro hardware, still modern</h3>
+          <p>
+            A stepped g with PSP-era pixel discipline. It is the boldest at tiny
+            sizes and the most explicitly handheld/homebrew.
+          </p>
+          <div class="previews">
+            <span class="preview" style="--size: 96px"><svg viewBox="0 0 512 512"><use href="#mark-d"></use></svg>96</span>
+            <span class="preview" style="--size: 64px"><svg viewBox="0 0 512 512"><use href="#mark-d"></use></svg>64</span>
+            <span class="preview" style="--size: 40px"><svg viewBox="0 0 512 512"><use href="#mark-d"></use></svg>40</span>
+            <span class="preview" style="--size: 24px"><svg viewBox="0 0 512 512"><use href="#mark-d"></use></svg>24</span>
+          </div>
+          <div class="wordmark">
+            <svg viewBox="0 0 512 512" aria-hidden="true"><use href="#mark-d"></use></svg>
+            <span>glyph</span>
+          </div>
+        </div>
+      </article>
     </section>
 
-    <section class="wordmark" aria-label="Wordmark lockup preview">
-      <svg viewBox="0 0 512 512" aria-hidden="true"><use href="#glyph-logo"></use></svg>
-      <span>glyph</span>
+    <section class="palette" aria-label="Palette">
+      <span class="swatch"><span class="chip" style="--chip: #0c0e10"></span>#0c0e10 reader black</span>
+      <span class="swatch"><span class="chip" style="--chip: #181c20"></span>#181c20 panel dark</span>
+      <span class="swatch"><span class="chip" style="--chip: #26323a"></span>#26323a rim</span>
+      <span class="swatch"><span class="chip" style="--chip: #62a4a8"></span>#62a4a8 glyph cyan</span>
+      <span class="swatch"><span class="chip" style="--chip: #7ee7f2"></span>#7ee7f2 edge light</span>
+      <span class="swatch"><span class="chip" style="--chip: #e8e6de"></span>#e8e6de reader text</span>
     </section>
   </main>
-
 </body>
 </html>
