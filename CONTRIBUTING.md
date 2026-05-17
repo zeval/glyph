@@ -1,31 +1,74 @@
 # Contributing
 
-Thanks for helping improve `glyph`. The project is early, so small, focused
-patches are easier to review and test than broad rewrites.
+`glyph` is a PSP Go-first EPUB reader. Keep changes small, testable, and aligned
+with the current constrained-reader scope.
 
-## Scope
+## Before You Start
 
-`glyph` is a PSP Go-first EPUB reader for DRM-free books. Keep changes aligned
-with that target unless a proposal has been discussed first.
+- Read [README.md](README.md), [spec/SPEC.md](spec/SPEC.md), and
+  [spec/QUESTIONS.md](spec/QUESTIONS.md).
+- Check existing issues and pull requests before opening a duplicate.
+- Prefer focused issues and pull requests over broad rewrites.
+- Do not include copyrighted EPUB samples in issues, tests, or pull requests.
+  Use minimal fixtures or public-domain books.
 
-Good first areas:
+## Development Setup
 
-- EPUB parsing and graceful fallback for common novel/text books.
-- Reader UX on the PSP Go's 480x272 screen.
-- Progress, settings, bookmarks, and library behavior.
-- Host tests for parser, layout, storage, and regression cases.
-- PSP build, packaging, and PPSSPP harness reliability.
+Install the host dependencies listed in the README, then run:
 
-Out of scope unless explicitly approved:
+```sh
+make check-deps
+make host
+make test
+make check-format
+```
 
-- DRM support.
-- GPL or AGPL dependencies.
-- Browser-grade HTML/CSS, JavaScript, audio/video, or fixed-layout EPUB.
-- Network sync/catalog features.
+PSP builds require PSPDEV/PSPSDK on `PATH`:
 
-## Development
+```sh
+export PSPDEV="$HOME/pspdev"
+export PATH="$PATH:$PSPDEV/bin"
+make psp
+```
 
-Install host dependencies listed in `README.md`, then run:
+For PSP-facing changes, also run:
+
+```sh
+make package-psp
+make run-ppsspp
+```
+
+## Project Constraints
+
+- C++17.
+- No exceptions and no RTTI.
+- Use RAII and explicit error/result values for fallible behavior.
+- Keep Linux and macOS host development working.
+- Keep PSP Go storage paths and 480x272 UI constraints in mind.
+- Keep PSP memory and CPU limits in mind.
+- Use `clang-format` through `make format` or `make check-format`.
+- Do not commit generated build output or private EPUB files.
+
+## Dependencies And Licenses
+
+Project code is MIT licensed. New dependencies must be compatible with the
+project license and documented clearly.
+
+Allowed dependency licenses include MIT, BSD-2-Clause, BSD-3-Clause, Zlib, ISC,
+and Apache-2.0. Bundled fonts may use SIL OFL after audit. Do not add GPL or
+AGPL dependencies without an explicit project decision.
+
+## Documentation
+
+- Keep public docs direct and current.
+- Avoid short-lived planning labels and private workflow details in public docs.
+- Use explicit TODOs only for intentionally deferred follow-up work with clear
+  scope.
+- Do not hand-edit generated build output.
+
+## Pull Requests
+
+Before opening a pull request:
 
 ```sh
 make check-deps
@@ -37,24 +80,12 @@ make check-format
 For PSP-facing changes, also run:
 
 ```sh
-export PSPDEV="$HOME/pspdev"
-export PATH="$PATH:$PSPDEV/bin"
+make psp
 make package-psp
 make run-ppsspp
 ```
 
-`make run-ppsspp` only performs a detect-mode smoke unless a runnable EBOOT and
-PPSSPP environment are available.
-
-## Code Style
-
-- C++17, no exceptions, no RTTI.
-- Prefer RAII and explicit result/error values.
-- Keep PSP memory and CPU limits in mind.
-- Use `clang-format` through `make format` or `make check-format`.
-- Do not commit generated build output or private EPUB files.
-
-## Commits
+If a relevant check cannot run, explain why in the pull request.
 
 Use concise Conventional Commits:
 
@@ -71,11 +102,10 @@ docs(readme): document PSP Go install path
 test(layout): cover long-word wrapping
 ```
 
-## Pull Requests
+Common types are `feat`, `fix`, `docs`, `test`, `refactor`, `chore`, `build`,
+and `ci`. Keep the summary imperative, lowercase after the type, and without a
+trailing period.
 
-Before opening a pull request:
+## Security
 
-- Rebase or merge current `main`.
-- Run the checks that apply to your change.
-- Explain user-visible behavior and PSP testing coverage.
-- Note any known limitations or follow-up work.
+Please report security issues privately. See [SECURITY.md](SECURITY.md).

@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Report a crash, rendering issue, or incorrect behavior
+about: Report a reproducible problem in glyph
 title: "bug: "
 labels: bug
 assignees: ""
@@ -12,12 +12,13 @@ What happened?
 
 ## Environment
 
-- Target: PSP Go / PPSSPP / host
-- Firmware or PPSSPP version:
-- OS for host builds:
 - Commit or release:
+- Platform: host Linux, host macOS, PSP Go, or PPSSPP
+- OS or firmware:
+- PSP custom firmware, if applicable:
+- PPSSPP version, if applicable:
 
-## Reproduction
+## Steps To Reproduce
 
 1.
 2.
@@ -25,8 +26,21 @@ What happened?
 
 ## Expected Behavior
 
-What should happen?
+What did you expect glyph to do?
 
-## Notes
+## Actual Behavior
 
-Attach logs, screenshots, or a minimal DRM-free EPUB when possible.
+What did glyph do instead?
+
+## EPUB Details
+
+- EPUB type: EPUB 2, EPUB 3, unknown
+- Content type: novel/text, image-heavy, fixed layout, other
+- Can you share a minimal fixture or public-domain sample?
+
+Do not attach copyrighted books. Please reduce the EPUB to a minimal fixture
+when possible.
+
+## Logs Or Output
+
+Paste relevant terminal output, PPSSPP output, screenshots, or crash details.

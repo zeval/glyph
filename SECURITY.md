@@ -1,31 +1,41 @@
 # Security Policy
 
-`glyph` is a homebrew reader for local DRM-free EPUB files. EPUB parsing is an
-important security boundary because book files are untrusted input.
+`glyph` is an offline PSP homebrew application that opens local DRM-free EPUB
+files. Security-sensitive issues are still in scope because EPUBs are untrusted
+input and the app writes local settings/progress files.
 
 ## Supported Versions
 
-The project has not shipped a stable release yet. Security fixes target the
-default branch until releases begin.
+There is no stable release line yet. Security fixes currently target `main`.
+Release branch support will be documented here when stable releases exist.
 
 ## Reporting A Vulnerability
 
-Please report suspected vulnerabilities privately through the repository owner's
-GitHub security contact or by opening a minimal private advisory if GitHub
-Security Advisories are enabled.
+Please do not open a public issue for a vulnerability.
 
-Include:
+Use GitHub private vulnerability reporting if it is enabled for the repository.
+If that is not available, contact the repository owner or maintainers privately
+with:
 
-- Affected commit or release.
-- A small reproducer EPUB when possible.
-- Expected behavior and observed behavior.
-- Crash logs, PPSSPP logs, or PSP notes if available.
+- affected commit or release,
+- host/PSP/PPSSPP environment,
+- steps to reproduce,
+- a minimal test EPUB or fixture generator when possible,
+- expected and actual behavior,
+- any crash logs, sanitizer output, or PPSSPP details.
 
-Do not publish exploit details until maintainers have had time to investigate.
+Do not send copyrighted books. Reduce the EPUB to a minimal fixture or use a
+public-domain sample whenever possible.
 
-## Areas Of Interest
+## Scope
 
-- Crashes, hangs, or memory corruption from malformed EPUB/ZIP/XML/XHTML.
-- Path traversal or unsafe writes from EPUB contents.
-- Unbounded memory allocation from large chapters, images, or metadata.
-- Host tooling that executes unexpected commands or reads outside intended paths.
+Examples of useful reports:
+
+- crashes, hangs, or memory corruption while opening malformed EPUB files,
+- path traversal or unsafe file handling,
+- unsafe archive parsing or decompression behavior,
+- local data loss in `saves/`, `cache/`, or `logs/`,
+- vulnerable dependencies or license/security concerns in bundled assets.
+
+DRM bypasses, network issues, and ebook store integrations are out of scope
+because glyph does not implement those features.

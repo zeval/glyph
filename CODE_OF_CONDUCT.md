@@ -1,30 +1,26 @@
-# Code of Conduct
+# Code Of Conduct
 
-This project follows the Contributor Covenant Code of Conduct, version 2.1.
-
-## Our Pledge
-
-We pledge to make participation in this project a respectful and harassment-free
-experience for everyone.
+This project expects professional, respectful participation.
 
 ## Expected Behavior
 
-- Be respectful and constructive.
-- Focus criticism on ideas, code, and project tradeoffs.
-- Assume good intent, but accept responsibility for the impact of your words.
-- Respect maintainer decisions about project scope and release quality.
+- Be direct and constructive.
+- Assume good faith while staying precise about technical risks.
+- Keep discussions focused on the project and its users.
+- Respect maintainers' time by providing reproducible reports and scoped pull
+  requests.
+- Be patient with contributors who are learning the PSP homebrew or EPUB domain.
 
 ## Unacceptable Behavior
 
 - Harassment, threats, insults, or discriminatory language.
-- Sexualized language or imagery.
-- Trolling, sustained disruption, or personal attacks.
-- Publishing private information without explicit permission.
+- Personal attacks or repeated bad-faith argument.
+- Publishing private contact information or private reports without permission.
+- Spam, trolling, or intentionally disruptive behavior.
 
 ## Enforcement
 
-Maintainers may remove comments, reject contributions, block accounts, or take
-other reasonable action when behavior harms the project community.
-
-Report conduct concerns privately to the project maintainers through the contact
-channels listed on the repository.
+Maintainers may edit or remove comments, close issues or pull requests, warn
+participants, or block users when behavior harms the project. Security-sensitive
+or private conduct reports should be sent through the same private channels
+described in [SECURITY.md](SECURITY.md).

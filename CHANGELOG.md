@@ -1,6 +1,10 @@
 # Changelog
 
-This project does not have tagged releases yet.
+All notable public changes to `glyph` are tracked here.
 
-Release notes will start with the first public release. Until then, use the Git
-history and pull request descriptions for change tracking.
+## Unreleased
+
+- Add public contribution, conduct, security, issue, and pull request docs.
+- Add original HTML/SVG logo concept source.
+- Clarify README status, build/test flow, PSP Go install layout, controls, and
+  licensing.

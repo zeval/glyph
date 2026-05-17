@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest a focused improvement for glyph
+about: Propose a focused glyph improvement
 title: "feat: "
 labels: enhancement
 assignees: ""
@@ -8,18 +8,21 @@ assignees: ""
 
 ## Summary
 
-What should change?
+What should glyph support or improve?
 
-## Use Case
+## User Scenario
 
-Who benefits, and how would they use it on PSP Go?
+Who needs this, and what are they trying to do on PSP Go?
 
-## Scope
+## Proposed Behavior
 
-- Target area: reader / library / EPUB parsing / PSP build / host tooling / docs
-- Is this needed for novels/text EPUBs?
-- Any PSP performance or storage concerns?
+Describe the desired behavior, controls, file handling, or UI.
+
+## Constraints
+
+Note any PSP Go, 480x272 UI, memory, storage, EPUB compatibility, or licensing
+constraints that affect the request.
 
 ## Alternatives
 
-What workaround exists today?
+What simpler or narrower approach would still solve the main problem?

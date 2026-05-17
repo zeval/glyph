@@ -2,15 +2,21 @@
 
 -
 
-## Testing
+## Validation
 
 - [ ] `make check-deps`
 - [ ] `make host`
 - [ ] `make test`
 - [ ] `make check-format`
+- [ ] `make psp` for PSP-facing changes
 - [ ] `make package-psp` for PSP-facing changes
-- [ ] Real PSP Go or PPSSPP smoke for UI/runtime changes
+- [ ] `make run-ppsspp` for PSP-facing changes when PPSSPP is available
 
-## Notes
+## Checklist
 
-Mention known limitations, follow-up work, or EPUB compatibility caveats.
+- [ ] I read `README.md`, `spec/SPEC.md`, and `spec/QUESTIONS.md`.
+- [ ] The change is focused and avoids unrelated cleanup.
+- [ ] Public docs avoid short-lived planning labels and private workflow details.
+- [ ] New dependencies, if any, are MIT-compatible permissive licenses.
+- [ ] GPL/AGPL dependencies were not added.
+- [ ] Bundled fonts or assets, if any, include license notes.
