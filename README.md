@@ -2,6 +2,19 @@
   <img src="assets/branding/glyph-wordmark.svg" alt="glyph" width="360">
 </p>
 
+<p align="center">
+  <a href="https://github.com/zeval/glyph/actions/workflows/ci.yml">
+    <img
+      src="https://github.com/zeval/glyph/actions/workflows/ci.yml/badge.svg?branch=main"
+      alt="ci status">
+  </a>
+  <a href="https://github.com/zeval/glyph/actions/workflows/psp-build.yml">
+    <img
+      src="https://github.com/zeval/glyph/actions/workflows/psp-build.yml/badge.svg?branch=main"
+      alt="psp-build status">
+  </a>
+</p>
+
 `glyph` is a PlayStation Portable homebrew EPUB reader, designed first for PSP
 Go and DRM-free reflowable books.
 
