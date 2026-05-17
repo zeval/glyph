@@ -6,8 +6,8 @@ This folder contains original project artwork source material for `glyph`.
 
 - Source: `logo-concept.html`
 - Format: static HTML/CSS with inline SVG.
-- Direction: lowercase `g`, dark reader UI base, blue/cyan signal color, strong
-  launcher-scale silhouette.
+- Direction: simple angular lowercase `g`, dark reader UI base, blue/cyan
+  signal color, strong launcher-scale silhouette.
 
 ## Palette
 

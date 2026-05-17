@@ -15,6 +15,8 @@
       --accent-hot: #7ee7f2;
       --grid: rgba(126, 231, 242, 0.12);
       --shadow: rgba(0, 0, 0, 0.34);
+      --brand-font: "Bahnschrift", "DIN Alternate", "Avenir Next Condensed", "Eurostile",
+        "Roboto Condensed", "Arial Narrow", ui-sans-serif, sans-serif;
     }
 
     * {
@@ -57,6 +59,7 @@
 
     h1 {
       font-size: clamp(2rem, 6vw, 5rem);
+      font-family: var(--brand-font);
       font-weight: 800;
       letter-spacing: 0;
       line-height: 0.9;
@@ -174,6 +177,7 @@
     .wordmark span {
       color: var(--text);
       font-size: clamp(2.3rem, 8vw, 4.8rem);
+      font-family: var(--brand-font);
       font-weight: 800;
       letter-spacing: 0;
       line-height: 0.82;
@@ -215,50 +219,33 @@
         stroke="#26323a"
         stroke-width="16"></rect>
       <path
-        d="M104 152h72M104 360h76M336 152h72M336 360h72"
+        d="
+          M174 122 H330 L384 176 V382 L340 426 H210 V372 H314 L330 356 V330 H174
+          L120 276 V176 Z
+          M204 188 L186 206 V246 L204 264 H292 L310 246 V206 L292 188 Z"
+        fill="#62a4a8"
+        fill-rule="evenodd"></path>
+      <path
+        d="M204 150 H314 L356 192"
         fill="none"
         stroke="#7ee7f2"
-        stroke-opacity="0.2"
-        stroke-width="8"></path>
-      <path
-        d="M322 128H224c-62 0-112 50-112 112s50 112 112 112 112-50 112-112V128"
-        fill="none"
-        stroke="#62a4a8"
-        stroke-width="72"
-        stroke-linecap="round"
-        stroke-linejoin="round"></path>
-      <path
-        d="M336 240v98c0 61-48 106-112 106-48 0-86-24-104-62"
-        fill="none"
-        stroke="#62a4a8"
-        stroke-width="72"
-        stroke-linecap="round"
-        stroke-linejoin="round"></path>
-      <path
-        d="M224 116h98M336 240v72"
-        fill="none"
-        stroke="#7ee7f2"
-        stroke-width="20"
-        stroke-linecap="round"
-        stroke-linejoin="round"></path>
-      <path d="M316 104h86v48h-86z" fill="#0c0e10"></path>
-      <path d="M352 362h52v48h-76z" fill="#0c0e10"></path>
-      <rect x="376" y="184" width="24" height="24" fill="#7ee7f2"></rect>
-      <rect x="132" y="372" width="18" height="18" fill="#7ee7f2"></rect>
+        stroke-width="14"
+        stroke-linecap="square"
+        stroke-linejoin="miter"></path>
     </symbol>
   </svg>
 
   <main>
     <header>
       <h1>glyph</h1>
-      <p class="tagline">Lowercase g identity concept for a PSP Go-first EPUB reader: dark reader chrome, cyan signal, and a compact silhouette that survives launcher sizes.</p>
+      <p class="tagline">Lowercase g identity concept for a PSP Go-first EPUB reader: dark reader chrome, cyan signal, and a compact angular silhouette that survives launcher sizes.</p>
     </header>
 
     <section class="stage" aria-label="Logo concept sheet">
       <div class="surface hero-mark">
         <svg class="logo-master" viewBox="0 0 512 512" role="img" aria-labelledby="logo-title logo-desc">
           <title id="logo-title">glyph lowercase g logo concept</title>
-          <desc id="logo-desc">A geometric lowercase g mark in blue-cyan on a dark square app tile.</desc>
+          <desc id="logo-desc">An angular lowercase g mark in blue-cyan on a dark square app tile.</desc>
           <use href="#glyph-logo"></use>
         </svg>
       </div>
@@ -319,8 +306,8 @@
 
         <section class="surface notes" aria-labelledby="notes-title">
           <h2 id="notes-title">Concept notes</h2>
-          <p>The mark is drawn as a stroke-built, single-source SVG. The bowl reads as a lowercase g at distance, while the hard terminal cuts echo constrained handheld UI chrome.</p>
-          <p>The cyan path is intentionally heavier than the highlight so 32 px launcher and save-data exports keep a clear silhouette.</p>
+          <p>The mark is a solid, angular single-storey g with a clear counter and a short descender. It stays inside the tile border at every preview size.</p>
+          <p>The cyan body carries the silhouette, while the small light edge gives it a technical accent without adding internal clutter.</p>
         </section>
       </div>
     </section>
