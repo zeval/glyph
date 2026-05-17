@@ -1,8 +1,6 @@
 <p align="center">
-  <img src="assets/branding/glyph-wordmark.svg" alt="glyph" width="250">
+  <img src="assets/branding/glyph-wordmark.svg" alt="glyph" width="320">
 </p>
-
-# glyph
 
 `glyph` is a PlayStation Portable homebrew EPUB reader, designed first for PSP
 Go and DRM-free reflowable books.
@@ -151,6 +149,22 @@ stored under `saves/`.
 See [CONTRIBUTING.md](CONTRIBUTING.md). Keep changes small, testable, and
 compatible with the PSP Go-first scope. Avoid GPL/AGPL dependencies unless the
 project explicitly changes its dependency policy.
+
+## Acknowledgements
+
+`glyph` benefits from a lot of excellent open-source work:
+
+- [PSPDEV](https://pspdev.github.io/) and
+  [PSPSDK](https://github.com/pspdev/pspsdk) for the modern PSP homebrew
+  toolchain.
+- [SDL2](https://www.libsdl.org/), SDL2_image, and SDL2_ttf for portable
+  rendering, input, image loading, and font rendering.
+- [FreeType](https://freetype.org/) and [zlib](https://zlib.net/) for text
+  rasterization and EPUB ZIP container support.
+- [Catch2](https://github.com/catchorg/Catch2) for host-side tests.
+- [PPSSPP](https://www.ppsspp.org/) for emulator-based smoke testing.
+- [Atkinson Hyperlegible Next](https://www.brailleinstitute.org/freefont/) from
+  Braille Institute for the bundled reader font.
 
 ## License
 
