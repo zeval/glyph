@@ -5,7 +5,6 @@ This repository is a PSP Go-first EPUB reader. Keep work small, testable, and pr
 ## Working Rules
 
 - Review relevant local skills in `skills/` when they match the task.
-- Read `spec/SPEC.md` and `spec/QUESTIONS.md` before changing behavior.
 - Keep user-facing code/docs free of temporary milestone labels or planning language.
 - Use explicit TODOs only when a known refactor or follow-up is intentionally deferred. Include owner/scope when useful.
 - Do not introduce GPL/AGPL dependencies. Project code is MIT; normal dependencies must be MIT-compatible permissive licenses. SIL OFL is allowed for bundled fonts after audit.
@@ -53,7 +52,7 @@ Examples:
 ```text
 feat(ui): add reader shell controls
 fix(harness): detect snap PPSSPP command
-docs(spec): record PSP Go storage paths
+docs(readme): record PSP Go install path
 chore(build): add clang-format check
 ```
 
@@ -67,7 +66,6 @@ Keep summary imperative, lowercase after type, no trailing period. Commit one lo
 - `tests/`: host tests.
 - `tools/`: developer automation.
 - `assets/`: bundled runtime assets and their licenses.
-- `spec/`: planning, research, and decision records. Milestone language is acceptable here.
 
 ## Agent Coordination
 

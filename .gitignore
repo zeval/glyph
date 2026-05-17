@@ -1,6 +1,8 @@
 /build/
 /build-host/
 /build-psp/
+/artwork/
+/spec/
 /books/*.epub
 /saves/
 /.cache/

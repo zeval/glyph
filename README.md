@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/branding/glyph-wordmark.svg" alt="glyph" width="320">
+  <img src="assets/branding/glyph-wordmark.svg" alt="glyph" width="360">
 </p>
 
 `glyph` is a PlayStation Portable homebrew EPUB reader, designed first for PSP
@@ -18,8 +18,9 @@ EPUB engine.
 - Primary storage: `ef0:/PSP/GAME/glyph/`.
 - Book folder: `ef0:/PSP/GAME/glyph/books/`.
 - Host development: Linux and macOS.
-- Emulator: PPSSPP when available.
-- License: MIT for project code; SIL OFL for bundled font files.
+- Emulator smoke tests: PPSSPP when available.
+- License: MIT for project code; SIL OFL for bundled Atkinson Hyperlegible Next
+  font files.
 
 `glyph` does not support DRM, Kindle/AZW, PDF, fixed-layout EPUB, scripting, or
 browser-grade CSS/layout.
@@ -141,8 +142,6 @@ stored under `saves/`.
 - `tests/`: host tests.
 - `tools/`: dependency checks, fixtures, and harness scripts.
 - `assets/`: bundled runtime assets and license files.
-- `artwork/`: original project artwork concepts and source files.
-- `spec/`: design notes, decisions, and implementation constraints.
 
 ## Contributing
 
