@@ -1,9 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 220" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 74" role="img" aria-labelledby="title desc">
   <title id="title">glyph wordmark</title>
   <desc id="desc">The glyph pixel mark beside the lowercase glyph name.</desc>
-  <rect x="8" y="8" width="744" height="204" rx="42" fill="#0c0e10"/>
-  <rect x="18" y="18" width="724" height="184" rx="34" fill="none" stroke="#26323a" stroke-width="3"/>
-  <g transform="translate(66 40) scale(0.2734375)">
+  <g transform="translate(0 13) scale(0.09375)">
     <rect x="48" y="48" width="416" height="416" rx="68" fill="#0c0e10"/>
     <rect x="56" y="56" width="400" height="400" rx="60" fill="none" stroke="#26323a" stroke-width="16"/>
     <g fill="#62a4a8">
@@ -24,11 +22,11 @@
     </g>
   </g>
   <text
-    x="258"
-    y="144"
-    fill="#62a4a8"
-    font-family="Bahnschrift, DIN Alternate, Avenir Next Condensed, Eurostile, Roboto Condensed, Arial Narrow, sans-serif"
-    font-size="112"
+    x="60"
+    y="55"
+    fill="#e8e6de"
+    font-family="Bahnschrift, DIN Alternate, Avenir Next Condensed, Eurostile, Roboto Condensed, Arial Narrow, ui-sans-serif, sans-serif"
+    font-size="59.2"
     font-weight="800"
     letter-spacing="0">glyph</text>
 </svg>

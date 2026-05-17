@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/branding/glyph-wordmark.svg" alt="glyph" width="520">
+  <img src="assets/branding/glyph-wordmark.svg" alt="glyph" width="250">
 </p>
 
 # glyph

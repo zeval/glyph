@@ -14,7 +14,7 @@ This folder contains original project artwork source material for `glyph`.
 
 - `../assets/branding/glyph-mark.svg`: standalone icon source.
 - `../assets/branding/glyph-mark.png`: PNG icon export.
-- `../assets/branding/glyph-wordmark.svg`: README wordmark source.
+- `../assets/branding/glyph-wordmark.svg`: transparent README wordmark source.
 - `../assets/branding/glyph-wordmark.png`: PNG wordmark export.
 
 ## Palette
@@ -28,10 +28,11 @@ This folder contains original project artwork source material for `glyph`.
 ## Export Notes
 
 Use `glyph-mark.svg` as the canonical standalone icon and
-`glyph-wordmark.svg` as the README/public presentation asset. Useful raster
-target sizes are 512, 256, 128, 64, 48, 32, and 16 px. PSP-facing exports should
-be checked on dark launcher backgrounds and in PPSSPP before being promoted to
-runtime assets.
+`glyph-wordmark.svg` as the README/public presentation asset. The wordmark keeps
+the icon tile plus the off-white lowercase `glyph` text from the HTML concept,
+without a surrounding banner frame. Useful raster target sizes are 512, 256,
+128, 64, 48, 32, and 16 px. PSP-facing exports should be checked on dark
+launcher backgrounds and in PPSSPP before being promoted to runtime assets.
 
 ## Licensing
 
