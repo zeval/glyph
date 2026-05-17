@@ -1,311 +1,342 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>glyph logo concept</title>
-    <style>
-      :root {
-        --bg: #0c0e10;
-        --panel: #181c20;
-        --panel-hi: #263039;
-        --text: #e8e6de;
-        --muted: #94a0a4;
-        --cyan: #62a4a8;
-        --cyan-hot: #83f1f4;
-        --blue: #315a92;
-        --grid: rgba(98, 164, 168, 0.18);
-      }
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>glyph logo concept</title>
+  <style>
+    :root {
+      --bg: #0c0e10;
+      --panel: #181c20;
+      --panel-hi: #26323a;
+      --text: #e8e6de;
+      --muted: #94a0a4;
+      --accent: #62a4a8;
+      --accent-hot: #7ee7f2;
+      --grid: rgba(126, 231, 242, 0.12);
+      --shadow: rgba(0, 0, 0, 0.34);
+    }
 
-      * {
-        box-sizing: border-box;
-      }
+    * {
+      box-sizing: border-box;
+    }
 
-      body {
-        margin: 0;
-        min-height: 100vh;
-        color: var(--text);
-        background:
-          linear-gradient(90deg, transparent 31px, var(--grid) 32px),
-          linear-gradient(transparent 31px, var(--grid) 32px),
-          radial-gradient(circle at 50% 22%, rgba(98, 164, 168, 0.18), transparent 34rem),
-          var(--bg);
-        background-size: 32px 32px, 32px 32px, auto, auto;
-        font-family:
-          Atkinson Hyperlegible, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-          "Segoe UI", sans-serif;
-      }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+        linear-gradient(0deg, var(--grid) 1px, transparent 1px),
+        var(--bg);
+      background-size: 32px 32px;
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
 
+    main {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 40px 0;
+    }
+
+    header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 28px;
+      border-bottom: 1px solid rgba(148, 160, 164, 0.24);
+      padding-bottom: 18px;
+    }
+
+    h1,
+    h2,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 6vw, 5rem);
+      font-weight: 800;
+      letter-spacing: 0;
+      line-height: 0.9;
+    }
+
+    .tagline {
+      max-width: 34rem;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+
+    .stage {
+      display: grid;
+      grid-template-columns: minmax(280px, 1.18fr) minmax(280px, 0.82fr);
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    .surface {
+      background: rgba(24, 28, 32, 0.88);
+      border: 1px solid rgba(148, 160, 164, 0.2);
+      box-shadow: 0 24px 80px var(--shadow);
+      padding: 24px;
+    }
+
+    .hero-mark {
+      display: grid;
+      place-items: center;
+      min-height: 620px;
+    }
+
+    .logo-master {
+      width: min(100%, 560px);
+      height: auto;
+    }
+
+    .side {
+      display: grid;
+      gap: 24px;
+    }
+
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(56px, 1fr));
+      gap: 16px;
+      align-items: end;
+    }
+
+    .preview {
+      display: grid;
+      gap: 10px;
+      justify-items: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .preview svg {
+      display: block;
+      width: 100%;
+      max-width: var(--size);
+      height: auto;
+    }
+
+    .palette {
+      display: grid;
+      gap: 10px;
+    }
+
+    .swatch {
+      display: grid;
+      grid-template-columns: 44px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .chip {
+      width: 44px;
+      height: 28px;
+      border: 1px solid rgba(232, 230, 222, 0.2);
+      background: var(--chip);
+    }
+
+    .code {
+      color: var(--text);
+      font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 0.85rem;
+    }
+
+    .notes {
+      display: grid;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    .wordmark {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(148, 160, 164, 0.2);
+    }
+
+    .wordmark svg {
+      width: 58px;
+      height: 58px;
+      flex: 0 0 auto;
+    }
+
+    .wordmark span {
+      color: var(--text);
+      font-size: clamp(2.3rem, 8vw, 4.8rem);
+      font-weight: 800;
+      letter-spacing: 0;
+      line-height: 0.82;
+    }
+
+    svg .tile {
+      fill: var(--bg);
+    }
+
+    svg .tile-rim {
+      fill: none;
+      stroke: var(--panel-hi);
+      stroke-width: 16;
+    }
+
+    svg .scan {
+      stroke: rgba(126, 231, 242, 0.2);
+      stroke-width: 8;
+    }
+
+    svg .glyph-core {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 72;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    svg .glyph-hot {
+      fill: none;
+      stroke: var(--accent-hot);
+      stroke-width: 20;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    svg .cut {
+      fill: var(--bg);
+    }
+
+    svg .spark {
+      fill: var(--accent-hot);
+    }
+
+    @media (max-width: 860px) {
       main {
-        width: min(1120px, calc(100vw - 32px));
-        margin: 0 auto;
-        padding: 48px 0;
+        width: min(100% - 24px, 680px);
+        padding: 24px 0;
       }
 
       header,
-      .board,
-      .notes {
-        border: 1px solid rgba(98, 164, 168, 0.28);
-        background: rgba(24, 28, 32, 0.88);
-        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.32);
-      }
-
-      header {
-        display: grid;
-        gap: 8px;
-        padding: 22px 24px;
-      }
-
-      h1,
-      h2,
-      p {
-        margin: 0;
-      }
-
-      h1 {
-        font-size: clamp(28px, 4vw, 52px);
-        font-weight: 760;
-        letter-spacing: 0;
-      }
-
-      h2 {
-        font-size: 18px;
-        font-weight: 720;
-        letter-spacing: 0;
-      }
-
-      p {
-        color: var(--muted);
-        line-height: 1.55;
-      }
-
-      .board {
-        display: grid;
-        grid-template-columns: minmax(280px, 1.15fr) minmax(280px, 0.85fr);
-        gap: 28px;
-        margin-top: 22px;
-        padding: 28px;
-      }
-
       .stage {
         display: grid;
-        place-items: center;
-        min-height: 560px;
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        background:
-          linear-gradient(180deg, rgba(38, 48, 57, 0.55), rgba(12, 14, 16, 0.8)),
-          var(--panel);
+        grid-template-columns: 1fr;
       }
 
-      .mark-large {
-        width: min(88%, 500px);
-        height: auto;
-        filter: drop-shadow(0 26px 44px rgba(0, 0, 0, 0.42));
+      .hero-mark {
+        min-height: 360px;
       }
 
-      .side {
-        display: grid;
-        align-content: start;
-        gap: 22px;
-      }
-
-      .preview-grid {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 12px;
-      }
-
-      .preview {
-        display: grid;
-        place-items: center;
-        min-height: 112px;
-        border: 1px solid rgba(98, 164, 168, 0.22);
-        background: #111519;
-      }
-
-      .preview svg {
-        display: block;
-      }
-
-      .chip-grid {
-        display: grid;
-        gap: 10px;
-      }
-
-      .chip {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 10px 12px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(12, 14, 16, 0.42);
-        color: var(--muted);
-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-        font-size: 13px;
-      }
-
-      .swatch {
-        width: 40px;
-        height: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-      }
-
-      .notes {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 18px;
-        margin-top: 22px;
-        padding: 22px 24px;
-      }
-
-      .notes section {
-        display: grid;
-        gap: 8px;
-      }
-
-      .glyph-wordmark {
-        display: flex;
-        align-items: center;
-        gap: 14px;
+      .surface {
         padding: 18px;
-        border: 1px solid rgba(98, 164, 168, 0.22);
-        background: #101417;
       }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>glyph</h1>
+      <p class="tagline">Lowercase g identity concept for a PSP Go-first EPUB reader: dark reader chrome, cyan signal, and a compact silhouette that survives launcher sizes.</p>
+    </header>
 
-      .glyph-wordmark strong {
-        font-size: 34px;
-        font-weight: 760;
-        letter-spacing: 0;
-      }
+    <section class="stage" aria-label="Logo concept sheet">
+      <div class="surface hero-mark">
+        <svg class="logo-master" viewBox="0 0 512 512" role="img" aria-labelledby="logo-title logo-desc">
+          <title id="logo-title">glyph lowercase g logo concept</title>
+          <desc id="logo-desc">A geometric lowercase g mark in blue-cyan on a dark square app tile.</desc>
+          <use href="#glyph-logo"></use>
+        </svg>
+      </div>
 
-      @media (max-width: 820px) {
-        main {
-          width: min(100vw - 20px, 680px);
-          padding: 20px 0;
-        }
-
-        .board,
-        .notes {
-          grid-template-columns: 1fr;
-        }
-
-        .stage {
-          min-height: 420px;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <main>
-      <header>
-        <h1>glyph logo concept</h1>
-        <p>
-          A cyan-blue technical lowercase g built from a continuous reader loop,
-          a descending data rail, and small terminal cuts that survive icon
-          scale.
-        </p>
-      </header>
-
-      <section class="board" aria-label="Logo concept board">
-        <div class="stage">
-          <svg class="mark-large" viewBox="0 0 512 512" role="img" aria-labelledby="mark-title">
-            <title id="mark-title">glyph lowercase g mark</title>
-            <defs>
-              <linearGradient id="glyph-stroke" x1="96" y1="84" x2="420" y2="456" gradientUnits="userSpaceOnUse">
-                <stop offset="0" stop-color="#83f1f4"></stop>
-                <stop offset="0.55" stop-color="#62a4a8"></stop>
-                <stop offset="1" stop-color="#315a92"></stop>
-              </linearGradient>
-              <symbol id="glyph-mark" viewBox="0 0 512 512">
-                <rect x="54" y="54" width="404" height="404" rx="92" fill="#0c0e10"></rect>
-                <path
-                  d="M348 160c-31-28-73-42-119-35-72 11-126 70-126 139 0 77 60 136 139 136 55 0 101-28 126-69v47c0 50-37 82-91 82h-72"
-                  fill="none"
-                  stroke="url(#glyph-stroke)"
-                  stroke-width="46"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"></path>
-                <path
-                  d="M351 160h49v48"
-                  fill="none"
-                  stroke="#83f1f4"
-                  stroke-width="30"
-                  stroke-linecap="square"
-                  stroke-linejoin="miter"></path>
-                <path
-                  d="M363 320h66"
-                  fill="none"
-                  stroke="#83f1f4"
-                  stroke-width="22"
-                  stroke-linecap="square"></path>
-                <circle cx="242" cy="263" r="55" fill="#11171b" stroke="#62a4a8" stroke-width="24"></circle>
-                <rect x="388" y="407" width="48" height="22" fill="#0c0e10"></rect>
-                <rect x="84" y="243" width="44" height="20" fill="#0c0e10"></rect>
-                <circle cx="401" cy="210" r="10" fill="#83f1f4"></circle>
-                <circle cx="429" cy="320" r="10" fill="#83f1f4"></circle>
-                <circle cx="205" cy="460" r="10" fill="#83f1f4"></circle>
-              </symbol>
-            </defs>
-            <use href="#glyph-mark"></use>
-          </svg>
-        </div>
-
-        <div class="side">
-          <section>
-            <h2>Small-size checks</h2>
-            <div class="preview-grid" aria-label="Icon scale previews">
-              <div class="preview"><svg width="96" height="96" viewBox="0 0 512 512"><use href="#glyph-mark"></use></svg></div>
-              <div class="preview"><svg width="64" height="64" viewBox="0 0 512 512"><use href="#glyph-mark"></use></svg></div>
-              <div class="preview"><svg width="40" height="40" viewBox="0 0 512 512"><use href="#glyph-mark"></use></svg></div>
-              <div class="preview"><svg width="24" height="24" viewBox="0 0 512 512"><use href="#glyph-mark"></use></svg></div>
+      <div class="side">
+        <section class="surface" aria-labelledby="previews-title">
+          <h2 id="previews-title">Size checks</h2>
+          <div class="preview-grid" aria-label="Small size logo previews">
+            <div class="preview" style="--size: 128px">
+              <svg viewBox="0 0 512 512" aria-hidden="true"><use href="#glyph-logo"></use></svg>
+              <span>128</span>
             </div>
-          </section>
-
-          <section>
-            <h2>Wordmark sketch</h2>
-            <div class="glyph-wordmark">
-              <svg width="64" height="64" viewBox="0 0 512 512" aria-hidden="true"><use href="#glyph-mark"></use></svg>
-              <strong>glyph</strong>
+            <div class="preview" style="--size: 64px">
+              <svg viewBox="0 0 512 512" aria-hidden="true"><use href="#glyph-logo"></use></svg>
+              <span>64</span>
             </div>
-          </section>
-
-          <section>
-            <h2>Palette</h2>
-            <div class="chip-grid">
-              <div class="chip"><span>#0c0e10 background</span><span class="swatch" style="background:#0c0e10"></span></div>
-              <div class="chip"><span>#181c20 panel</span><span class="swatch" style="background:#181c20"></span></div>
-              <div class="chip"><span>#62a4a8 app cyan</span><span class="swatch" style="background:#62a4a8"></span></div>
-              <div class="chip"><span>#83f1f4 signal cyan</span><span class="swatch" style="background:#83f1f4"></span></div>
-              <div class="chip"><span>#315a92 deep blue</span><span class="swatch" style="background:#315a92"></span></div>
+            <div class="preview" style="--size: 48px">
+              <svg viewBox="0 0 512 512" aria-hidden="true"><use href="#glyph-logo"></use></svg>
+              <span>48</span>
             </div>
-          </section>
-        </div>
-      </section>
+            <div class="preview" style="--size: 32px">
+              <svg viewBox="0 0 512 512" aria-hidden="true"><use href="#glyph-logo"></use></svg>
+              <span>32</span>
+            </div>
+          </div>
+        </section>
 
-      <section class="notes" aria-label="Design notes">
-        <section>
-          <h2>Shape</h2>
-          <p>
-            The main stroke reads as a lowercase g, but the squared terminals
-            and rail give it a device/UI feel instead of a soft book-brand feel.
-          </p>
+        <section class="surface" aria-labelledby="palette-title">
+          <h2 id="palette-title">Palette</h2>
+          <div class="palette">
+            <div class="swatch">
+              <span class="chip" style="--chip: #0c0e10"></span>
+              <span>reader black</span>
+              <span class="code">#0c0e10</span>
+            </div>
+            <div class="swatch">
+              <span class="chip" style="--chip: #181c20"></span>
+              <span>panel dark</span>
+              <span class="code">#181c20</span>
+            </div>
+            <div class="swatch">
+              <span class="chip" style="--chip: #62a4a8"></span>
+              <span>glyph cyan</span>
+              <span class="code">#62a4a8</span>
+            </div>
+            <div class="swatch">
+              <span class="chip" style="--chip: #7ee7f2"></span>
+              <span>edge light</span>
+              <span class="code">#7ee7f2</span>
+            </div>
+            <div class="swatch">
+              <span class="chip" style="--chip: #e8e6de"></span>
+              <span>reader text</span>
+              <span class="code">#e8e6de</span>
+            </div>
+          </div>
         </section>
-        <section>
-          <h2>Exports</h2>
-          <p>
-            Use the inline SVG as the source for future square app icons, PSP
-            package artwork, and README/social preview assets.
-          </p>
+
+        <section class="surface notes" aria-labelledby="notes-title">
+          <h2 id="notes-title">Concept notes</h2>
+          <p>The mark is drawn as a stroke-built, single-source SVG. The bowl reads as a lowercase g at distance, while the hard terminal cuts echo constrained handheld UI chrome.</p>
+          <p>The cyan path is intentionally heavier than the highlight so 32 px launcher and save-data exports keep a clear silhouette.</p>
         </section>
-        <section>
-          <h2>Constraints</h2>
-          <p>
-            The design avoids external fonts and dependencies. It should remain
-            legible when reduced to PSP menu and repository favicon sizes.
-          </p>
-        </section>
-      </section>
-    </main>
-  </body>
+      </div>
+    </section>
+
+    <section class="wordmark" aria-label="Wordmark lockup preview">
+      <svg viewBox="0 0 512 512" aria-hidden="true"><use href="#glyph-logo"></use></svg>
+      <span>glyph</span>
+    </section>
+  </main>
+
+  <svg width="0" height="0" aria-hidden="true" focusable="false">
+    <symbol id="glyph-logo" viewBox="0 0 512 512">
+      <rect class="tile" x="48" y="48" width="416" height="416" rx="68"></rect>
+      <rect class="tile-rim" x="56" y="56" width="400" height="400" rx="60"></rect>
+      <path class="scan" d="M104 152h72M104 360h76M336 152h72M336 360h72"></path>
+      <path class="glyph-core" d="M322 128H224c-62 0-112 50-112 112s50 112 112 112 112-50 112-112V128"></path>
+      <path class="glyph-core" d="M336 240v98c0 61-48 106-112 106-48 0-86-24-104-62"></path>
+      <path class="glyph-hot" d="M224 116h98M336 240v72"></path>
+      <path class="cut" d="M316 104h86v48h-86z"></path>
+      <path class="cut" d="M352 362h52v48h-76z"></path>
+      <rect class="spark" x="376" y="184" width="24" height="24"></rect>
+      <rect class="spark" x="132" y="372" width="18" height="18"></rect>
+    </symbol>
+  </svg>
+</body>
 </html>
