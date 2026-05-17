@@ -2,12 +2,20 @@
 
 This folder contains original project artwork source material for `glyph`.
 
-## Logo Directions
+## Logo Source
 
 - Source: `logo-concept.html`
 - Format: static HTML/CSS with inline SVG.
-- Direction: multiple large-pixel lowercase `g` concepts, dark reader UI base,
-  blue/cyan signal color, centered silhouettes.
+- Direction: large-pixel lowercase `g`, dark reader UI base, blue/cyan signal
+  color, centered silhouette, and a descender that stays away from the icon
+  border.
+
+## Exported Assets
+
+- `../assets/branding/glyph-mark.svg`: standalone icon source.
+- `../assets/branding/glyph-mark.png`: PNG icon export.
+- `../assets/branding/glyph-wordmark.svg`: README wordmark source.
+- `../assets/branding/glyph-wordmark.png`: PNG wordmark export.
 
 ## Palette
 
@@ -17,12 +25,13 @@ This folder contains original project artwork source material for `glyph`.
 - Edge light: `#7ee7f2`
 - Reader text: `#e8e6de`
 
-## Future Exports
+## Export Notes
 
-Use the inline SVG symbols in `logo-concept.html` as source material for the
-chosen direction. Useful target sizes are 512, 256, 128, 64, 48, 32, and 16 px.
-PSP-facing exports should be checked on dark launcher backgrounds and in PPSSPP
-before being promoted to runtime assets.
+Use `glyph-mark.svg` as the canonical standalone icon and
+`glyph-wordmark.svg` as the README/public presentation asset. Useful raster
+target sizes are 512, 256, 128, 64, 48, 32, and 16 px. PSP-facing exports should
+be checked on dark launcher backgrounds and in PPSSPP before being promoted to
+runtime assets.
 
 ## Licensing
 

@@ -1006,7 +1006,6 @@ int App::firstVisibleBook() const {
 
 void App::prepareRenderResources() {
   if (screen_ != Screen::Reader) {
-    prepareText("glyph", kAccent);
     prepareText(screenName(screen_), kMuted);
   }
 
@@ -1149,7 +1148,7 @@ void App::render() {
 
   if (screen_ != Screen::Reader) {
     fillRect(0, 0, config_.width, kTopBarHeight, kPanel);
-    drawText("glyph", 8, 5, kAccent);
+    drawBrandMark(8, 4, 2, 1, kAccent);
     drawTextRight(screenName(screen_), config_.width - 8, 5, kMuted);
   }
 
@@ -1217,7 +1216,8 @@ void App::renderBrowser() {
 void App::renderReader() {
   fillRect(0, 0, config_.width, kTopBarHeight, kPanel);
   fillRect(0, kTopBarHeight, config_.width, 1, kPanelHi);
-  drawTextClipped(reader_title_, 8, 5, 174, kAccent);
+  drawBrandMark(8, 4, 2, 1, kAccent);
+  drawTextClipped(reader_title_, 25, 5, 157, kAccent);
   drawTextClipped(currentChapterTitle(), 188, 5, 178, kMuted);
   drawTextRight(readerProgressText(), config_.width - 8, 5, kMuted);
 
@@ -1353,6 +1353,18 @@ void App::drawTextClipped(const std::string& text, int x, int y, int max_width, 
     SDL_RenderSetClipRect(renderer_, &previous_clip);
   } else {
     SDL_RenderSetClipRect(renderer_, nullptr);
+  }
+}
+
+void App::drawBrandMark(int x, int y, int cell, int gap, SDL_Color color) {
+  const int step = cell + gap;
+  const int pixels[][2] = {
+      {1, 0}, {2, 0}, {0, 1}, {3, 1}, {0, 2}, {3, 2}, {0, 3},
+      {1, 3}, {2, 3}, {3, 3}, {3, 4}, {0, 5}, {1, 5}, {2, 5},
+  };
+
+  for (const auto& pixel : pixels) {
+    fillRect(x + pixel[0] * step, y + pixel[1] * step, cell, cell, color);
   }
 }
 

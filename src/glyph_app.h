@@ -140,6 +140,7 @@ private:
   void drawText(const std::string& text, int x, int y, SDL_Color color);
   void drawTextRight(const std::string& text, int right_x, int y, SDL_Color color);
   void drawTextClipped(const std::string& text, int x, int y, int max_width, SDL_Color color);
+  void drawBrandMark(int x, int y, int cell, int gap, SDL_Color color);
   void fillRect(int x, int y, int w, int h, SDL_Color color);
   void strokeRect(int x, int y, int w, int h, SDL_Color color);
   bool loadFont();

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">glyph pixel mark</title>
+  <desc id="desc">A dark rounded square icon with a cyan lowercase g built from large pixels.</desc>
+  <rect x="48" y="48" width="416" height="416" rx="68" fill="#0c0e10"/>
+  <rect x="56" y="56" width="400" height="400" rx="60" fill="none" stroke="#26323a" stroke-width="16"/>
+  <g fill="#62a4a8">
+    <rect x="204" y="100" width="48" height="48"/>
+    <rect x="260" y="100" width="48" height="48"/>
+    <rect x="148" y="156" width="48" height="48"/>
+    <rect x="316" y="156" width="48" height="48"/>
+    <rect x="148" y="212" width="48" height="48"/>
+    <rect x="316" y="212" width="48" height="48"/>
+    <rect x="148" y="268" width="48" height="48"/>
+    <rect x="204" y="268" width="48" height="48"/>
+    <rect x="260" y="268" width="48" height="48"/>
+    <rect x="316" y="268" width="48" height="48"/>
+    <rect x="316" y="324" width="48" height="48"/>
+    <rect x="148" y="380" width="48" height="48"/>
+    <rect x="204" y="380" width="48" height="48"/>
+    <rect x="260" y="380" width="48" height="48"/>
+  </g>
+</svg>
