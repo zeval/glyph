@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 132" role="img" aria-labelledby="title desc">
   <title id="title">glyph wordmark</title>
   <desc id="desc">The glyph pixel mark beside the lowercase glyph name.</desc>
-  <g transform="translate(0 9.5) scale(0.25)">
+  <g transform="translate(12.9 22.4) scale(0.2)">
     <rect x="48" y="48" width="416" height="416" rx="68" fill="#0c0e10"/>
     <rect x="56" y="56" width="400" height="400" rx="60" fill="none" stroke="#26323a" stroke-width="16"/>
     <g fill="#62a4a8">
