@@ -21,7 +21,7 @@ Go and DRM-free reflowable books.
 The project is in active early development. The repository currently provides a
 native C++17 SDL2 app, host Linux/macOS builds, PSP EBOOT builds, a PPSSPP smoke
 harness, EPUB metadata/text extraction, simple pagination, progress/settings
-storage, bundled reader fonts, and a sample EPUB fixture. EPUB support is
+storage, a bundled reader font, and a sample EPUB fixture. EPUB support is
 narrow: expect simple novel-style EPUBs to work best, not a complete desktop
 EPUB engine.
 
@@ -32,8 +32,8 @@ EPUB engine.
 - Book folder: `ef0:/PSP/GAME/glyph/books/`.
 - Host development: Linux and macOS.
 - Emulator smoke tests: PPSSPP when available.
-- License: MIT for project code; SIL OFL for bundled Atkinson Hyperlegible Next
-  font files.
+- License: MIT for project code; SIL OFL for the bundled Atkinson Hyperlegible
+  Next font file.
 
 `glyph` does not support DRM, Kindle/AZW, PDF, fixed-layout EPUB, scripting, or
 browser-grade CSS/layout.
@@ -182,7 +182,7 @@ project explicitly changes its dependency policy.
 
 Project code is MIT licensed. See [LICENSE](LICENSE).
 
-Bundled Atkinson Hyperlegible Next font files are redistributed under the SIL
+The bundled Atkinson Hyperlegible Next font file is redistributed under the SIL
 Open Font License 1.1. See [assets/fonts/README.md](assets/fonts/README.md) and
 [assets/fonts/OFL.txt](assets/fonts/OFL.txt).
 

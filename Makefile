@@ -88,7 +88,7 @@ package-psp: psp sample-book
 	mkdir -p "$(PSP_PACKAGE)/assets/fonts" "$(PSP_PACKAGE)/books"
 	cp "$(BUILD_PSP)/EBOOT.PBP" "$(PSP_PACKAGE)/EBOOT.PBP"
 	cp books/glyph-sample.epub "$(PSP_PACKAGE)/books/glyph-sample.epub"
-	cp assets/fonts/*.ttf "$(PSP_PACKAGE)/assets/fonts/"
+	cp assets/fonts/AtkinsonHyperlegibleNext-Regular.ttf "$(PSP_PACKAGE)/assets/fonts/"
 	cp assets/fonts/OFL.txt assets/fonts/README.md "$(PSP_PACKAGE)/assets/fonts/"
 
 .PHONY: format

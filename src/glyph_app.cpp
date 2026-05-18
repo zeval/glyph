@@ -1384,12 +1384,7 @@ bool App::loadFont() {
   const char* candidates[] = {
       "ef0:/PSP/GAME/glyph/assets/fonts/AtkinsonHyperlegibleNext-Regular.ttf",
       "ms0:/PSP/GAME/glyph/assets/fonts/AtkinsonHyperlegibleNext-Regular.ttf",
-      "ef0:/PSP/GAME/glyph/assets/fonts/AtkinsonHyperlegibleNext[wght].ttf",
-      "ms0:/PSP/GAME/glyph/assets/fonts/AtkinsonHyperlegibleNext[wght].ttf",
       "assets/fonts/AtkinsonHyperlegibleNext-Regular.ttf",
-      "assets/fonts/AtkinsonHyperlegibleNext[wght].ttf",
-      "assets/fonts/AtkinsonHyperlegible-Regular.ttf",
-      "assets/fonts/Atkinson-Hyperlegible-Regular-102.ttf",
       "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
       "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
       "/System/Library/Fonts/Supplemental/Arial.ttf",
