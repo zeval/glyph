@@ -14,7 +14,7 @@
 
 ## Checklist
 
-- [ ] I read `README.md`, `spec/SPEC.md`, and `spec/QUESTIONS.md`.
+- [ ] I read `README.md`, `AGENTS.md`, and the relevant source or tool docs.
 - [ ] The change is focused and avoids unrelated cleanup.
 - [ ] Public docs avoid short-lived planning labels and private workflow details.
 - [ ] New dependencies, if any, are MIT-compatible permissive licenses.

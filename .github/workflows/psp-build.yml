@@ -15,7 +15,7 @@ env:
 
 jobs:
   psp:
-    name: PSP EBOOT
+    name: PSP package
     runs-on: ubuntu-latest
 
     steps:
@@ -55,12 +55,12 @@ jobs:
       - name: Check dependencies
         run: make check-deps
 
-      - name: Build PSP EBOOT
-        run: make psp
+      - name: Build PSP package
+        run: make package-psp
 
-      - name: Upload EBOOT artifact
+      - name: Upload PSP package artifact
         uses: actions/upload-artifact@v4
         with:
-          name: glyph-psp-eboot
-          path: build/psp/EBOOT.PBP
+          name: glyph-psp-package
+          path: build/package/glyph/**
           if-no-files-found: error

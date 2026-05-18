@@ -62,3 +62,39 @@ jobs:
             exit 0
           fi
           exit "$status"
+
+  host-sanitizers:
+    name: host sanitizers
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Ubuntu dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            make \
+            pkg-config \
+            libsdl2-dev \
+            libsdl2-image-dev \
+            libsdl2-ttf-dev \
+            zlib1g-dev \
+            catch2
+
+      - name: Configure ASan/UBSan host tests
+        run: |
+          cmake -S . -B build/sanitizers \
+            -DGLYPH_BUILD_PSP=OFF \
+            -DGLYPH_BUILD_TESTS=ON \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer" \
+            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
+
+      - name: Build ASan/UBSan host tests
+        run: cmake --build build/sanitizers
+
+      - name: Run ASan/UBSan host tests
+        run: ctest --test-dir build/sanitizers --output-on-failure

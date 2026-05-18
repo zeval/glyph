@@ -5,8 +5,8 @@ with the current constrained-reader scope.
 
 ## Before You Start
 
-- Read [README.md](README.md), [spec/SPEC.md](spec/SPEC.md), and
-  [spec/QUESTIONS.md](spec/QUESTIONS.md).
+- Read [README.md](README.md), [AGENTS.md](AGENTS.md), and the relevant source
+  or tool docs before changing behavior.
 - Check existing issues and pull requests before opening a duplicate.
 - Prefer focused issues and pull requests over broad rewrites.
 - Do not include copyrighted EPUB samples in issues, tests, or pull requests.

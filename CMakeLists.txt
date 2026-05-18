@@ -17,6 +17,9 @@ add_library(glyph_document
 
 add_executable(glyph
   src/glyph_app.cpp
+  src/glyph_app_books.cpp
+  src/glyph_app_input.cpp
+  src/glyph_app_render.cpp
   src/library.cpp
   src/main.cpp
   src/progress.cpp
@@ -129,7 +132,7 @@ if(PSP OR GLYPH_BUILD_PSP)
 
   create_pbp_file(
     TARGET glyph
-    ICON_PATH NULL
+    ICON_PATH ${CMAKE_CURRENT_SOURCE_DIR}/assets/psp/ICON0.PNG
     BACKGROUND_PATH NULL
     PREVIEW_PATH NULL
     TITLE glyph

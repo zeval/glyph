@@ -35,8 +35,9 @@ void appendBytes(std::vector<uint8_t>& out, const std::string& text) {
 }
 
 std::string tempEpubPath() {
+  static int counter = 0;
   return "/tmp/glyph-epub-test-" + std::to_string(static_cast<long long>(std::time(nullptr))) +
-         ".epub";
+         "-" + std::to_string(counter++) + ".epub";
 }
 
 bool writeStoredZip(const std::string& path, std::vector<ZipFixtureEntry> entries) {
@@ -236,6 +237,82 @@ bool writeEpubWithCoverImage(const std::string& path) {
       });
 }
 
+bool writeEpubWithoutContainer(const std::string& path) {
+  return writeStoredZip(
+      path,
+      {
+          {"mimetype", "application/epub+zip"},
+          {"OPS/package.opf", "<?xml version=\"1.0\"?>"
+                              "<package version=\"2.0\" xmlns=\"http://www.idpf.org/2007/opf\">"
+                              "<metadata xmlns:dc=\"http://purl.org/dc/elements/1.1/\">"
+                              "<dc:title>No Container</dc:title>"
+                              "</metadata><manifest/><spine/></package>"},
+      });
+}
+
+bool writeEpubWithBrokenContainer(const std::string& path) {
+  return writeStoredZip(
+      path,
+      {
+          {"mimetype", "application/epub+zip"},
+          {"META-INF/container.xml",
+           "<?xml version=\"1.0\"?>"
+           "<container version=\"1.0\" xmlns=\"urn:oasis:names:tc:opendocument:xmlns:container\">"
+           "<rootfiles><rootfile media-type=\"application/oebps-package+xml\"/></rootfiles>"
+           "</container>"},
+      });
+}
+
+bool writeEpubWithInvalidManifestHref(const std::string& path) {
+  return writeStoredZip(
+      path,
+      {
+          {"mimetype", "application/epub+zip"},
+          {"META-INF/container.xml",
+           "<?xml version=\"1.0\"?>"
+           "<container version=\"1.0\" xmlns=\"urn:oasis:names:tc:opendocument:xmlns:container\">"
+           "<rootfiles><rootfile full-path=\"OPS/package.opf\" "
+           "media-type=\"application/oebps-package+xml\"/></rootfiles></container>"},
+          {"OPS/package.opf",
+           "<?xml version=\"1.0\"?>"
+           "<package version=\"2.0\" xmlns=\"http://www.idpf.org/2007/opf\">"
+           "<metadata xmlns:dc=\"http://purl.org/dc/elements/1.1/\">"
+           "<dc:title>Bad Href</dc:title>"
+           "</metadata>"
+           "<manifest>"
+           "<item id=\"remote\" href=\"http://example.invalid/chapter.xhtml\" "
+           "media-type=\"application/xhtml+xml\"/>"
+           "<item id=\"escape\" href=\"../escape.xhtml\" media-type=\"application/xhtml+xml\"/>"
+           "</manifest>"
+           "<spine><itemref idref=\"remote\"/><itemref idref=\"escape\"/></spine>"
+           "</package>"},
+      });
+}
+
+bool writeEpubWithMissingSpineResource(const std::string& path) {
+  return writeStoredZip(
+      path,
+      {
+          {"mimetype", "application/epub+zip"},
+          {"META-INF/container.xml",
+           "<?xml version=\"1.0\"?>"
+           "<container version=\"1.0\" xmlns=\"urn:oasis:names:tc:opendocument:xmlns:container\">"
+           "<rootfiles><rootfile full-path=\"OPS/package.opf\" "
+           "media-type=\"application/oebps-package+xml\"/></rootfiles></container>"},
+          {"OPS/package.opf",
+           "<?xml version=\"1.0\"?>"
+           "<package version=\"2.0\" xmlns=\"http://www.idpf.org/2007/opf\">"
+           "<metadata xmlns:dc=\"http://purl.org/dc/elements/1.1/\">"
+           "<dc:title>Missing Chapter</dc:title>"
+           "</metadata>"
+           "<manifest>"
+           "<item id=\"chap1\" href=\"missing.xhtml\" media-type=\"application/xhtml+xml\"/>"
+           "</manifest>"
+           "<spine><itemref idref=\"chap1\"/></spine>"
+           "</package>"},
+      });
+}
+
 } // namespace
 
 TEST_CASE("xhtml extraction keeps readable text") {
@@ -263,6 +340,14 @@ TEST_CASE("xhtml extraction ignores declarations and head metadata") {
   CHECK(text == "Start\n"
                 "This tiny EPUB is generated deterministically for glyph tests.\n"
                 "It has one spine item, one nav entry, and one NCX entry.");
+}
+
+TEST_CASE("xhtml extraction handles malformed markup without crashing") {
+  const std::string text = glyph::extractXhtmlText(
+      "<body><h1>Broken chapter<p>Text before <em>unterminated emphasis</body>");
+
+  CHECK(text.find("Broken chapter") != std::string::npos);
+  CHECK(text.find("Text before") != std::string::npos);
 }
 
 TEST_CASE("epub document loads metadata, spine, and chapter text") {
@@ -336,6 +421,55 @@ TEST_CASE("epub document resolves cover image resources") {
   const glyph::ZipReadResult cover = document.readResource(document.book().cover_image_path);
   REQUIRE(cover.ok);
   CHECK(glyph::bytesToString(cover.bytes) == "fake-jpeg");
+
+  std::remove(path.c_str());
+}
+
+TEST_CASE("epub document rejects missing container file") {
+  const std::string path = tempEpubPath();
+  REQUIRE(writeEpubWithoutContainer(path));
+
+  glyph::EpubDocument document;
+  REQUIRE_FALSE(document.open(path));
+  CHECK(document.error().find("container.xml") != std::string::npos);
+
+  std::remove(path.c_str());
+}
+
+TEST_CASE("epub document rejects container without package path") {
+  const std::string path = tempEpubPath();
+  REQUIRE(writeEpubWithBrokenContainer(path));
+
+  glyph::EpubDocument document;
+  REQUIRE_FALSE(document.open(path));
+  CHECK(document.error().find("OPF package") != std::string::npos);
+
+  std::remove(path.c_str());
+}
+
+TEST_CASE("epub document rejects unsafe or remote manifest hrefs") {
+  const std::string path = tempEpubPath();
+  REQUIRE(writeEpubWithInvalidManifestHref(path));
+
+  glyph::EpubDocument document;
+  REQUIRE_FALSE(document.open(path));
+  CHECK(document.error().find("spine") != std::string::npos);
+
+  std::remove(path.c_str());
+}
+
+TEST_CASE("epub document reports missing spine resources cleanly") {
+  const std::string path = tempEpubPath();
+  REQUIRE(writeEpubWithMissingSpineResource(path));
+
+  glyph::EpubDocument document;
+  REQUIRE(document.open(path));
+  REQUIRE(document.book().spine.size() == 1);
+
+  const glyph::EpubTextResult result = document.readSpineText(0);
+  REQUIRE_FALSE(result.ok);
+  CHECK(result.text.empty());
+  CHECK(result.error.find("not found") != std::string::npos);
 
   std::remove(path.c_str());
 }

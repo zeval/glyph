@@ -261,10 +261,7 @@ std::string resolveZipPath(const std::string& base_path, const std::string& href
     if (part.empty() || part == ".") {
       // skip
     } else if (part == "..") {
-      if (parts.empty()) {
-        return "";
-      }
-      parts.pop_back();
+      return "";
     } else {
       parts.push_back(part);
     }
