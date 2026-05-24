@@ -31,6 +31,7 @@ constexpr int kReaderTextY = kTopBarHeight + 6;
 constexpr int kReaderTextBottomPadding = 4;
 constexpr int kBrowserListWidth = 282;
 constexpr int kBrowserRowHeight = 42;
+constexpr int kBrowserFooterHeight = 50;
 constexpr size_t kTextTextureCacheLimit = 160;
 
 const char* screenName(Screen screen) {
@@ -166,7 +167,7 @@ int App::maxReaderScroll() const {
 }
 
 int App::visibleBookCount() const {
-  return std::max(1, (config_.height - 54) / kBrowserRowHeight + 1);
+  return std::max(1, (config_.height - kBrowserFooterHeight - 28) / kBrowserRowHeight + 1);
 }
 
 int App::firstVisibleBook() const {
@@ -190,7 +191,8 @@ void App::prepareRenderResources() {
     updateSelectedCover();
     prepareText(books_path_, kMuted);
     prepareText("No cover", kMuted);
-    prepareText("Cross/Enter open  Circle/Esc back  Start/S settings", kMuted);
+    prepareText("Cross open   Start settings", kMuted);
+    prepareText("D-pad choose   Circle quit", kMuted);
     const int first = firstVisibleBook();
     const int last = std::min(static_cast<int>(books_.size()), first + visibleBookCount());
     for (int i = first; i < last; ++i) {
@@ -358,7 +360,7 @@ void App::renderBrowser() {
   const int cover_h = config_.height - cover_y - 42;
   drawCoverPreview(cover_x, cover_y, cover_w, cover_h);
 
-  SDL_Rect list_clip = {0, 28, kBrowserListWidth + 2, config_.height - 54};
+  SDL_Rect list_clip = {0, 28, kBrowserListWidth + 2, config_.height - kBrowserFooterHeight};
   SDL_RenderSetClipRect(renderer_, &list_clip);
 
   const int first = firstVisibleBook();
@@ -386,7 +388,8 @@ void App::renderBrowser() {
   }
 
   SDL_RenderSetClipRect(renderer_, nullptr);
-  drawText("Cross/Enter open  Circle/Esc back  Start/S settings", 8, config_.height - 18, kMuted);
+  drawText("Cross open   Start settings", 8, config_.height - 34, kMuted);
+  drawText("D-pad choose   Circle quit", 8, config_.height - 18, kMuted);
 }
 
 void App::renderReader() {

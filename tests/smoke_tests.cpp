@@ -8,6 +8,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -109,4 +110,28 @@ TEST_CASE("library falls back to stable samples when no EPUB files exist") {
     REQUIRE(book.sample);
     REQUIRE(book.file_path.empty());
   }
+}
+
+TEST_CASE("PSP EBOOT icon asset has opaque menu dimensions") {
+  std::ifstream file("assets/psp/ICON0.PNG", std::ios::binary);
+  REQUIRE(file.good());
+
+  unsigned char header[26] = {};
+  file.read(reinterpret_cast<char*>(header), sizeof(header));
+  REQUIRE(file.gcount() == static_cast<std::streamsize>(sizeof(header)));
+
+  const unsigned char expected_signature[8] = {0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n'};
+  for (int i = 0; i < 8; ++i) {
+    REQUIRE(header[i] == expected_signature[i]);
+  }
+
+  const auto read_be32 = [](const unsigned char* p) {
+    return (static_cast<unsigned int>(p[0]) << 24) | (static_cast<unsigned int>(p[1]) << 16) |
+           (static_cast<unsigned int>(p[2]) << 8) | static_cast<unsigned int>(p[3]);
+  };
+
+  REQUIRE(read_be32(&header[16]) == 144);
+  REQUIRE(read_be32(&header[20]) == 80);
+  REQUIRE(header[24] == 8);
+  REQUIRE(header[25] == 2);
 }
