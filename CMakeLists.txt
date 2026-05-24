@@ -173,6 +173,7 @@ if(GLYPH_BUILD_TESTS AND NOT PSP AND NOT GLYPH_BUILD_PSP)
       src/settings_store.cpp
       tests/epub_tests.cpp
       tests/progress_tests.cpp
+      tests/render_state_tests.cpp
       tests/settings_store_tests.cpp
       tests/smoke_tests.cpp
       tests/snapshot_harness_tests.cpp

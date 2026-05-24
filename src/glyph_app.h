@@ -2,6 +2,7 @@
 #define GLYPH_APP_H
 
 #include "glyph_snapshot.h"
+#include "render_state.h"
 
 #include <SDL.h>
 #include <SDL_ttf.h>
@@ -131,6 +132,7 @@ private:
   int linesPerPage() const;
   int readerScrollStep() const;
   int maxReaderScroll() const;
+  RenderState renderState() const;
   void prepareRenderResources();
   void prepareText(const std::string& text, SDL_Color color);
   SDL_Texture* textTextureFor(const std::string& text, SDL_Color color, int& width, int& height);

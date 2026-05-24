@@ -100,18 +100,12 @@ int App::run() {
       handleEvent(event, input);
     }
 
-    const Screen previous_screen = screen_;
-    const int previous_book = selected_book_;
-    const int previous_setting = selected_setting_;
-    const int previous_scroll = reader_scroll_;
-    const size_t previous_line_count = reader_lines_.size();
+    const RenderState previous_state = renderState();
 
     pollPlatformInput(input);
     applyInput(input);
 
-    if (screen_ != previous_screen || selected_book_ != previous_book ||
-        selected_setting_ != previous_setting || reader_scroll_ != previous_scroll ||
-        reader_lines_.size() != previous_line_count) {
+    if (renderStateChanged(previous_state, renderState())) {
       needs_render_ = true;
     }
 
@@ -124,6 +118,21 @@ int App::run() {
   }
 
   return 0;
+}
+
+RenderState App::renderState() const {
+  RenderState state;
+  state.screen = static_cast<int>(screen_);
+  state.selected_book = selected_book_;
+  state.selected_setting = selected_setting_;
+  state.reader_scroll = reader_scroll_;
+  state.reader_line_count = static_cast<int>(reader_lines_.size());
+  state.jump_overlay_open = jump_overlay_open_;
+  state.jump_mode = static_cast<int>(jump_mode_);
+  state.selected_chapter = selected_chapter_;
+  state.scroll_step_mode = scroll_step_mode_;
+  state.page_entry = page_entry_;
+  return state;
 }
 
 void App::shutdown() {
