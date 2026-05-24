@@ -4,7 +4,7 @@ This repository is a PSP Go-first EPUB reader. Keep work small, testable, and pr
 
 ## Working Rules
 
-- Review relevant local skills in `skills/` when they match the task.
+- Review relevant local skills in `.agents/skills/` when they match the task.
 - Keep user-facing code/docs free of temporary milestone labels or planning language.
 - Use explicit TODOs only when a known refactor or follow-up is intentionally deferred. Include owner/scope when useful.
 - Do not introduce GPL/AGPL dependencies. Project code is MIT; normal dependencies must be MIT-compatible permissive licenses. SIL OFL is allowed for bundled fonts after audit.
