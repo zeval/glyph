@@ -25,6 +25,7 @@ help:
 		'  make run-host       Build and run host SDL2 app' \
 		'  make test           Build host app/tests and run CTest' \
 		'  make fixture-epub   Generate a deterministic tiny EPUB fixture' \
+		'  make ui-snapshots   Capture host UI PNGs and an HTML contact sheet' \
 		'  make psp            Configure and build PSP EBOOT.PBP via psp-cmake' \
 		'  make package-psp    Build PSP install folder with assets and sample book' \
 		'  make sample-book    Generate books/glyph-sample.epub for local smoke tests' \
@@ -57,6 +58,10 @@ test:
 .PHONY: fixture-epub
 fixture-epub:
 	$(PYTHON) tools/fixtures/make_tiny_epub.py --output "$(TINY_EPUB)" --force --check --sha256
+
+.PHONY: ui-snapshots
+ui-snapshots: host
+	$(PYTHON) tools/harness/capture_ui_snapshots.py --glyph "$(BUILD_HOST)/$(HOST_TARGET)" --out build/ui --fixture "$(TINY_EPUB)"
 
 .PHONY: psp
 psp:

@@ -1,4 +1,44 @@
-# Glyph PPSSPP Harness
+# Glyph Harnesses
+
+## Host UI Snapshots
+
+The host SDL app can render one deterministic frame and write it as a PNG. This
+is the fastest way to review PSP-sized UI changes on a headless machine.
+
+Capture the standard review set:
+
+```sh
+make ui-snapshots
+```
+
+Outputs:
+
+```text
+build/ui/browser.png
+build/ui/settings.png
+build/ui/reader.png
+build/ui/reader-select.png
+build/ui/index.html
+```
+
+The target builds the host app, generates `build/fixtures/tiny.epub`, captures
+the screenshots with SDL's dummy video driver, and writes a small HTML contact
+sheet.
+
+Capture one screen manually:
+
+```sh
+env SDL_VIDEODRIVER=dummy ./build/host/glyph --snapshot reader-select --book build/fixtures/tiny.epub --out build/ui/reader-select.png
+```
+
+Available snapshot names:
+
+- `browser`
+- `settings`
+- `reader`
+- `reader-select`
+
+## PPSSPP Harness
 
 This directory contains the PPSSPP harness for glyph. It currently detects an
 existing emulator install and can run a bounded smoke launch. It does not build,

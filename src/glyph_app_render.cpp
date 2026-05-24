@@ -1,6 +1,9 @@
 #include "glyph_app.h"
 
 #include "epub.h"
+#if defined(GLYPH_PLATFORM_HOST)
+#include "png_writer.h"
+#endif
 #include "progress.h"
 #include "settings_store.h"
 
@@ -317,6 +320,10 @@ void App::clearTextCache() {
 }
 
 void App::render() {
+  renderFrame(true);
+}
+
+void App::renderFrame(bool present) {
   prepareRenderResources();
 
   SDL_RenderSetClipRect(renderer_, nullptr);
@@ -345,10 +352,47 @@ void App::render() {
     break;
   }
 
+  if (present) {
 #if defined(GLYPH_PLATFORM_PSP)
-  sceDisplayWaitVblankStart();
+    sceDisplayWaitVblankStart();
 #endif
-  SDL_RenderPresent(renderer_);
+    SDL_RenderPresent(renderer_);
+  }
+}
+
+bool App::renderSnapshot(SnapshotKind kind, const std::string& output_path) {
+#if defined(GLYPH_PLATFORM_HOST)
+  closeJumpOverlay();
+  switch (kind) {
+  case SnapshotKind::Browser:
+    screen_ = Screen::Browser;
+    break;
+  case SnapshotKind::Settings:
+    settings_return_screen_ = Screen::Browser;
+    selected_setting_ = 0;
+    screen_ = Screen::Settings;
+    break;
+  case SnapshotKind::Reader:
+    screen_ = Screen::Reader;
+    break;
+  case SnapshotKind::ReaderSelect:
+    screen_ = Screen::Reader;
+    openJumpOverlay();
+    break;
+  }
+
+  renderFrame(false);
+  std::vector<unsigned char> pixels(static_cast<size_t>(config_.width) * config_.height * 3);
+  if (SDL_RenderReadPixels(renderer_, nullptr, SDL_PIXELFORMAT_RGB24, pixels.data(),
+                           config_.width * 3) != 0) {
+    return false;
+  }
+  return writeRgbPng(output_path, config_.width, config_.height, pixels);
+#else
+  (void)kind;
+  (void)output_path;
+  return false;
+#endif
 }
 
 void App::renderBrowser() {

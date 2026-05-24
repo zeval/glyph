@@ -15,7 +15,12 @@ add_library(glyph_document
   src/zip_archive.cpp
 )
 
+if(NOT PSP AND NOT GLYPH_BUILD_PSP)
+  target_sources(glyph_document PRIVATE src/png_writer.cpp)
+endif()
+
 add_executable(glyph
+  src/glyph_cli.cpp
   src/glyph_app.cpp
   src/glyph_app_books.cpp
   src/glyph_app_input.cpp
@@ -162,6 +167,7 @@ if(GLYPH_BUILD_TESTS AND NOT PSP AND NOT GLYPH_BUILD_PSP)
   find_package(Catch2 3 QUIET)
   if(Catch2_FOUND)
     add_executable(glyph_tests
+      src/glyph_cli.cpp
       src/library.cpp
       src/progress.cpp
       src/settings_store.cpp
@@ -169,6 +175,7 @@ if(GLYPH_BUILD_TESTS AND NOT PSP AND NOT GLYPH_BUILD_PSP)
       tests/progress_tests.cpp
       tests/settings_store_tests.cpp
       tests/smoke_tests.cpp
+      tests/snapshot_harness_tests.cpp
       tests/text_layout_tests.cpp
       tests/zip_tests.cpp
     )

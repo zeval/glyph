@@ -1,6 +1,8 @@
 #ifndef GLYPH_APP_H
 #define GLYPH_APP_H
 
+#include "glyph_snapshot.h"
+
 #include <SDL.h>
 #include <SDL_ttf.h>
 
@@ -41,6 +43,7 @@ public:
 
   bool init();
   int run();
+  bool renderSnapshot(SnapshotKind kind, const std::string& output_path);
   void shutdown();
 
 private:
@@ -133,6 +136,7 @@ private:
   SDL_Texture* textTextureFor(const std::string& text, SDL_Color color, int& width, int& height);
   void clearTextCache();
   void render();
+  void renderFrame(bool present);
   void renderBrowser();
   void renderReader();
   void renderSettings();
